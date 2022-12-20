@@ -3,6 +3,7 @@ This repository is intended for On Line Machine Learning
 ## Technical Requirements:
 * Python 3.9
 * [RiverML Library version 0.14](https://riverml.xyz/0.14.0/)
+* Numpy Version 1.24.3 for PAC and PACF plotting. (Autocorrelation Plots and Parcial Autocorrelatio Plots)
 ## Project Structure (Source Code): 
 The project is divided into two notebooks:
 > TFM_Largo_Plazo <br>
