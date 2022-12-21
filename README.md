@@ -1,4 +1,4 @@
-# On-Line-Machine-Learning
+# On-Line-Machine-Learning (Nowcasting and Forecasting with several horizons)
 This repository is intended for On Line Machine Learning
 ## Technical Requirements:
 * Python 3.9
