@@ -25,4 +25,7 @@ Also, the best model in forecasting has been used to **estimate uncertainty on p
 
 In this study **Nowcasting** with several models like Linear Regression Model,Hoeffding Tree Regressor,a Dummy Model just giving the value in (t-1), and also Stochastic Gradient Tree for Regression, have been used, considering or not Concept Drift and Outliers to check wether the perfomance of the models improved or not.
 
-And for **Forecasting**, SNARIMAX model with three horizons (1,2 and 3 months) against a dummy model Holtwinter, has been stutied.
+And for **Forecasting**, SNARIMAX model with three horizons (1,2 and 3 months) against a dummy model Holtwinter, has been studied.
+
+Once all the investigations have been done. A bit of light explaining the best model, Linear Regression,have been carried out with SHAP Library, although there is also another library called LIME for the same purpose.
+**Estimation of uncertainity and the explanation** of the model are in TFM_Nowcasting and in the global notebook TFM_Nowcasting_y_Largo_Plazo.ipynb
