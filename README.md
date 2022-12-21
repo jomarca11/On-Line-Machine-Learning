@@ -8,11 +8,11 @@ This repository is intended for On Line Machine Learning
 The project is divided into two notebooks:
 > TFM_Largo_Plazo <br>
 > TFM_Nowcasting <br>
+Both notebooks are joint in this notebook TFM_Nowcasting_y_Largo_Plazo.ipynb, you can check whatever you prefer,BUT the latter is very long.<br>
 
 ## Language:
-Comments in code and Thesis for the master in Spanish
+Comments in code and Thesis for the master in Spanish<br>
 
-Both notebooks are joint in this notebook TFM_Nowcasting_y_Largo_Plazo.ipynb, you can check whatever you prefer,BUT the latter is very long.<br>
 ## DATASET
 Downloaded from arXivLabs [Chicken Cases Estimation in Hungary](https://doi.org/10.48550/arXiv.2209.14129).<br>
 Time-Series Forecasting is a powerful data modeling discipline that analyzes historical observations to predict future values of a time-series. It has been utilized in numerous applications, including but not limited to economics, meteorology, and health. In this paper, we use time-series forecasting techniques to model and predict the future incidence of chickenpox.
