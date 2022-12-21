@@ -20,4 +20,4 @@ The solution involves real-time data analytics, and the development of algorithm
 
  In this study **Nowcasting** with several models like Linear Regression Model,Hoeffding Tree Regressor,a Dummy Model just giving the value in (t-1), and also Stochastic Gradient Tree for Regression, have been used, considering or not Concept Drift and Outliers to check wether the perfomance of the models improved or not.
 
-And for **Forecasting**, SNARIMAX model with three horizons (1,2 and 3 months) against a dummy model Holtwinter, has been sutied.
+And for **Forecasting**, SNARIMAX model with three horizons (1,2 and 3 months) against a dummy model Holtwinter, has been stutied.
