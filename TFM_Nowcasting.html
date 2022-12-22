@@ -1,0 +1,2825 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="author" content="MarkdownViewer++" />
+        <title>TFM_Nowcasting.md</title>
+        <style type="text/css">
+            
+/* Avoid page breaks inside the most common attributes, especially for exports (i.e. PDF) */
+td, h1, h2, h3, h4, h5, p, ul, ol, li {
+    page-break-inside: avoid; 
+}
+
+        </style>
+      </head>
+    <body>
+        <pre><code class="language-python">#Necesitamos reinstalar la version correcta de numpy por que la explicabilidad del modelo necesita al version 1.21
+!pip install --force-reinstall numpy==1.23.4 
+</code></pre>
+<pre><code>Collecting numpy==1.23.4
+  Using cached numpy-1.23.4-cp39-cp39-win_amd64.whl (14.7 MB)
+Installing collected packages: numpy
+  Attempting uninstall: numpy
+    Found existing installation: numpy 1.23.4
+    Uninstalling numpy-1.23.4:
+      Successfully uninstalled numpy-1.23.4
+Successfully installed numpy-1.23.4
+
+
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+daal4py 2021.6.0 requires daal==2021.4.0, which is not installed.
+numba 0.55.1 requires numpy&lt;1.22,&gt;=1.18, but you have numpy 1.23.4 which is incompatible.
+</code></pre>
+<pre><code class="language-python">import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from river import drift
+</code></pre>
+<h2 id="analisis-exploratorio-de-los-datos">1.Análisis Exploratorio de los datos.</h2>
+<h3 id="carga-de-datos">1.1 Carga de datos</h3>
+<p>Procedemos a cargar el dataset.</p>
+<pre><code class="language-python">#1.Cargamos los datos
+#2. Comprobamos los datos nulos y vemos que no hay ninguno
+data_orig = pd.read_csv('C:/Users/jrmr/Master/TFM/PEC3/hungary_chickenpox/hungary_chickenpox.csv')
+data_orig['Date'] = pd.to_datetime(data_orig['Date'],format=&quot;%d/%m/%Y&quot;) # convertimos a fecha
+</code></pre>
+<h3 id="analisis-descriptivo-de-los-datos">1.2 Análisis descriptivo de los datos</h3>
+<pre><code class="language-python">#Comprobamos si hay nulos en los datos
+data_orig.isna().sum()
+</code></pre>
+<pre><code>Date        0
+BUDAPEST    0
+BARANYA     0
+BACS        0
+BEKES       0
+BORSOD      0
+CSONGRAD    0
+FEJER       0
+GYOR        0
+HAJDU       0
+HEVES       0
+JASZ        0
+KOMAROM     0
+NOGRAD      0
+PEST        0
+SOMOGY      0
+SZABOLCS    0
+TOLNA       0
+VAS         0
+VESZPREM    0
+ZALA        0
+dtype: int64
+</code></pre>
+<p>####1.2.1 Valores Nulos.
+Se Puede comprobar que <strong>no existen ningún valor vacio</strong> en los datos.</p>
+<pre><code class="language-python">#añadimos el total de todas las ciudades
+data_orig['Total_Casos'] = data_orig.sum(axis=1)
+data_orig.head()
+</code></pre>
+<pre><code>C:\Users\jrmr\AppData\Local\Temp\ipykernel_17100\3302194850.py:2: FutureWarning: Dropping of nuisance columns in DataFrame reductions (with 'numeric_only=None') is deprecated; in a future version this will raise TypeError.  Select only valid columns before calling the reduction.
+  data_orig['Total_Casos'] = data_orig.sum(axis=1)
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Date</th>
+      <th>BUDAPEST</th>
+      <th>BARANYA</th>
+      <th>BACS</th>
+      <th>BEKES</th>
+      <th>BORSOD</th>
+      <th>CSONGRAD</th>
+      <th>FEJER</th>
+      <th>GYOR</th>
+      <th>HAJDU</th>
+      <th>...</th>
+      <th>KOMAROM</th>
+      <th>NOGRAD</th>
+      <th>PEST</th>
+      <th>SOMOGY</th>
+      <th>SZABOLCS</th>
+      <th>TOLNA</th>
+      <th>VAS</th>
+      <th>VESZPREM</th>
+      <th>ZALA</th>
+      <th>Total_Casos</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2005-01-03</td>
+      <td>168</td>
+      <td>79</td>
+      <td>30</td>
+      <td>173</td>
+      <td>169</td>
+      <td>42</td>
+      <td>136</td>
+      <td>120</td>
+      <td>162</td>
+      <td>...</td>
+      <td>57</td>
+      <td>2</td>
+      <td>178</td>
+      <td>66</td>
+      <td>64</td>
+      <td>11</td>
+      <td>29</td>
+      <td>87</td>
+      <td>68</td>
+      <td>1807</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2005-01-10</td>
+      <td>157</td>
+      <td>60</td>
+      <td>30</td>
+      <td>92</td>
+      <td>200</td>
+      <td>53</td>
+      <td>51</td>
+      <td>70</td>
+      <td>84</td>
+      <td>...</td>
+      <td>50</td>
+      <td>29</td>
+      <td>141</td>
+      <td>48</td>
+      <td>29</td>
+      <td>58</td>
+      <td>53</td>
+      <td>68</td>
+      <td>26</td>
+      <td>1407</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2005-01-17</td>
+      <td>96</td>
+      <td>44</td>
+      <td>31</td>
+      <td>86</td>
+      <td>93</td>
+      <td>30</td>
+      <td>93</td>
+      <td>84</td>
+      <td>191</td>
+      <td>...</td>
+      <td>46</td>
+      <td>4</td>
+      <td>157</td>
+      <td>33</td>
+      <td>33</td>
+      <td>24</td>
+      <td>18</td>
+      <td>62</td>
+      <td>44</td>
+      <td>1284</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>2005-01-24</td>
+      <td>163</td>
+      <td>49</td>
+      <td>43</td>
+      <td>126</td>
+      <td>46</td>
+      <td>39</td>
+      <td>52</td>
+      <td>114</td>
+      <td>107</td>
+      <td>...</td>
+      <td>54</td>
+      <td>14</td>
+      <td>107</td>
+      <td>66</td>
+      <td>50</td>
+      <td>25</td>
+      <td>21</td>
+      <td>43</td>
+      <td>31</td>
+      <td>1255</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>2005-01-31</td>
+      <td>122</td>
+      <td>78</td>
+      <td>53</td>
+      <td>87</td>
+      <td>103</td>
+      <td>34</td>
+      <td>95</td>
+      <td>131</td>
+      <td>172</td>
+      <td>...</td>
+      <td>49</td>
+      <td>11</td>
+      <td>124</td>
+      <td>63</td>
+      <td>56</td>
+      <td>7</td>
+      <td>47</td>
+      <td>85</td>
+      <td>60</td>
+      <td>1478</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 22 columns</p>
+</div>
+<h4 id="numero-de-instancias-y-variables">1.2.2 Número de Instancias y variables.</h4>
+<p>Con la nueva columna que se ha añadido Total_Casos, que totaliza los valores por cada instancia, tenemos 522 instancias y 22 variables.</p>
+<pre><code class="language-python">#Revisamos el número de instancias
+data_orig.shape
+</code></pre>
+<pre><code>(522, 22)
+</code></pre>
+<h4 id="outliers">1.2.3 Outliers.</h4>
+<p>Revisando todas las provincias, se comprueba que, si que hay outliers que deberían de detectarse cuando se esta procesando el streaming de datos, y evitar entrenar con ellos.</p>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 1
+for row in axes:
+    for ax in row:
+        x = data_orig.iloc[:, i]
+        sns.boxplot(x=x,ax=ax, orient='h')
+        i += 1
+plt.tight_layout()
+plt.show()
+
+</code></pre>
+<p><img src="output_12_0.png" alt="png" /></p>
+<h4 id="analisis-de-estacionalidad">1.2.4 Análisis de Estacionalidad.</h4>
+<p>Hacemos un análisis de la <strong>estacionalidad</strong> de los datos.Se ha creado un campo Total_Casos, para que añada un resumen de todos los datos. A primera vista y para cada provincia, se detecta una estacionalidad en los datos, así mismo en el total de los casos de varicela. Claramente se ve unos picos en los contagios de varicela finales del primer trimestre de cada año y un máximo en el segundo trimestre, decayendo rapidamente en el tercer trimestre, posiblemente por la vacunación o por el clima que empieza a ser mas fresco.Otra factor que pudiera afectar seria el período escolar. En el cuarto trimestre empieza a subir otra vez hasta el segundo trimestre y se vuelve al mismo ciclo de contagios.</p>
+<pre><code class="language-python">ax = data_orig.plot(x='Date',  figsize=(20,8))
+</code></pre>
+<p><img src="output_14_0.png" alt="png" /></p>
+<p>Primeramente vamos a descomponer la variable Total_Casos,  en estacionalidad, tendencia y la parte de residuos, para obtener una idea general de la estructura de los datos.</p>
+<pre><code class="language-python">from statsmodels.tsa.seasonal import seasonal_decompose
+data_orig.set_index('Date', inplace=True)
+</code></pre>
+<pre><code class="language-python">analysis = data_orig[['Total_Casos']].copy()
+decompose_result_mult = seasonal_decompose(analysis, model=&quot;additive&quot;)
+fig = decompose_result_mult.plot();
+fig.set_size_inches((12, 8))
+fig.tight_layout()
+plt.show()
+
+</code></pre>
+<p><img src="output_17_0.png" alt="png" /></p>
+<p>Pasamos a ver la estacionaldad, según cada provincia con más detalle. Viendo las series de  los gráficos individuales, se puede observar lo siguiente:</p>
+<ul>
+<li>El número de casos reportados depende de la cantidad de población. Aquellas provincias tienen mas población, reportan mas casos.</li>
+<li>Las series exhiben una grans estacionalidad anual</li>
+<li>Un gran número de provincias no reportaron ningún caso en verano.</li>
+</ul>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 1
+for row in axes:
+    for ax in row:
+        x = data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        sns.lineplot(x = &quot;Date&quot;, y = label, data=data_orig, ax=ax)
+        i += 1
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_19_0.png" alt="png" /></p>
+<h4 id="analisis-de-estacionareidad">1.2.5 Análisis de Estacionareidad.</h4>
+<p>Uno de los requisitos para comprobar la Autocorrelación y Correlacion Parcial es que las series sean estacionarias. Se ha utilizado el test de Dickey-Fuller para comprobar que todas las series son estacionarias. Si no fueran estacionarias se deberían de modificar para que sí lo fueran.</p>
+<pre><code class="language-python">#estacionariedad
+from statsmodels.tsa.stattools import adfuller
+dict_estacionario={}
+Status = &quot;Estacionaria&quot;
+col=&quot;&quot;
+for column in data_orig:
+    result = adfuller(data_orig[column])
+    if (result[1] &lt;= 0.05) &amp; (result[4]['5%'] &gt; result[0]):
+           # print(&quot;\u001b[32mStationary\u001b[0m&quot;)
+           #Status= &quot;Estacionaria&quot;
+           dict_estacionario[column]=&quot;Serie Estacionaria&quot;
+    else:
+          #print(&quot;\x1b[31mNon-stationary\x1b[0m&quot;)
+          #Status =&quot;No Estacionaria&quot;
+          #col=column
+          #break
+          dict_estacionario[column]=&quot;Serie No Estacionaria&quot;
+
+# Iterate over key/value pairs in dict and print them
+for key, value in dict_estacionario.items():
+    print(key, ' : ', value)
+</code></pre>
+<pre><code>BUDAPEST  :  Serie Estacionaria
+BARANYA  :  Serie Estacionaria
+BACS  :  Serie Estacionaria
+BEKES  :  Serie Estacionaria
+BORSOD  :  Serie Estacionaria
+CSONGRAD  :  Serie Estacionaria
+FEJER  :  Serie Estacionaria
+GYOR  :  Serie Estacionaria
+HAJDU  :  Serie Estacionaria
+HEVES  :  Serie Estacionaria
+JASZ  :  Serie Estacionaria
+KOMAROM  :  Serie Estacionaria
+NOGRAD  :  Serie Estacionaria
+PEST  :  Serie Estacionaria
+SOMOGY  :  Serie Estacionaria
+SZABOLCS  :  Serie Estacionaria
+TOLNA  :  Serie Estacionaria
+VAS  :  Serie Estacionaria
+VESZPREM  :  Serie Estacionaria
+ZALA  :  Serie Estacionaria
+Total_Casos  :  Serie Estacionaria
+</code></pre>
+<h4 id="autocorrelation-and-partial-autocorrelation">1.2.6 AutoCorrelation and Partial Autocorrelation.</h4>
+<p>Vemos un modelo de Autocorrelacion que nos indica un modelo estacional por la forma sinusiode de la gráfica para cada provincia.
+Viendo también el gráfico de la Correlación Parcial donde hay pocos valores por encima de la zona de confianza, se podrían modelar las series con un modelo Auto Regresivo (AR), de orden 3.</p>
+<pre><code class="language-python">from statsmodels.graphics.tsaplots import plot_acf
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        x = data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        ax.set_xlabel(label)
+        fig = plot_acf(x, lags=104, ax=ax)
+        i += 1
+plt.tight_layout()
+plt.show()
+
+</code></pre>
+<p><img src="output_23_0.png" alt="png" /></p>
+<pre><code class="language-python">from statsmodels.graphics.tsaplots import plot_pacf
+from statsmodels.graphics.tsaplots import plot_acf
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 16))
+i = 0
+for row in axes:
+    for ax in row:
+        x = data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        ax.set_xlabel(label)
+        fig = plot_pacf(x, lags=104, ax=ax, method=&quot;ywmle&quot;,) 
+        i += 1
+plt.tight_layout()
+plt.show()
+
+</code></pre>
+<p><img src="output_24_0.png" alt="png" /></p>
+<pre><code class="language-python">fig, ax = plt.subplots( figsize=(14, 7))
+ax.set_title('Simple plot')
+df_BUDAPEST = data_orig[['BUDAPEST']].copy()
+df_BUDAPEST.plot(ax=ax)
+
+df_JASZ = data_orig[['JASZ']].copy()
+df_JASZ.plot(ax=ax)
+
+df_TOLNA = data_orig[['TOLNA']].copy()
+df_TOLNA.plot(ax=ax)
+
+plt.show()
+
+</code></pre>
+<p><img src="output_25_0.png" alt="png" /></p>
+<h4 id="resumen">1.2.7 Resumen:</h4>
+<p>Tenemos unas series Temporales que presentan las siguientes características:</p>
+<ul>
+<li>Presentan una <strong>correlación temporal</strong>: El número de casos de una semana esta corelacionado con el número de casos de semanas anteriores.</li>
+<li>Presentan una estacionalidad anual muy fuerte.</li>
+<li>Presentan un número de casos dependiente del tamaño y población de la provincia..</li>
+<li>Las Series son estacionarias con lo que se pueden modelar usando modelos de Regresion (AR), viendo sus gráficos de AutoCorrelación y AutoCorrelación Parcial</li>
+</ul>
+<h1 id="tareas-predictivas">2.Tareas Predictivas</h1>
+<h2 id="corto-plazo-nowcasting">2.1 Corto Plazo (Nowcasting)</h2>
+<p>En este apartado vamos a realizar las tareas relacionadas con el Nowcasting</p>
+<pre><code class="language-python">#Nowcasting con todos los regresores
+from river import compose
+from river import linear_model,tree
+from river import preprocessing
+from river import metrics, stats,optim
+from river import utils,dummy
+import pandas as pd
+
+import matplotlib.pyplot as plt
+import calendar,math
+label_num_casos =&quot;Num. Casos&quot;
+
+
+class StatisticRegressor(dummy.StatisticRegressor):
+  # this method has to be overriden because of the first element, if it is None, then return something, 0 in this case
+    def predict_one(self, x):
+        yp = super().predict_one(x)
+        if yp is None:
+            return 0
+        return yp
+
+df_datos=pd.DataFrame(columns=data_orig.columns)
+
+#Dataframes para recoger los errores y mostrarlos en las gráficas sin tener en cuenta los outliers
+df_error_mae_baseline=pd.DataFrame(columns=data_orig.columns)
+df_error_mae_linear=pd.DataFrame(columns=data_orig.columns)
+df_error_mae_hft=pd.DataFrame(columns=data_orig.columns)
+df_error_mae_stg=pd.DataFrame(columns=data_orig.columns)
+
+#Dataframes para recoger los errores y mostrarlos en las gráficas considerando los outliers
+df_error_mae_baseline_sin_outliers=pd.DataFrame(columns=data_orig.columns)
+df_error_mae_linear_sin_outliers=pd.DataFrame(columns=data_orig.columns)
+df_error_mae_hft_sin_outliers=pd.DataFrame(columns=data_orig.columns)
+df_error_mae_stg_sin_outliers=pd.DataFrame(columns=data_orig.columns)
+
+#Dataframes para recoger los errores considerando el Concept Drift
+df_error_mae_baseline_concept=pd.DataFrame(columns=data_orig.columns)
+df_error_mae_linear_concept=pd.DataFrame(columns=data_orig.columns)
+df_error_mae_hft_concept=pd.DataFrame(columns=data_orig.columns)
+df_error_mae_stg_concept=pd.DataFrame(columns=data_orig.columns)
+
+def get_ordinal_date(x):
+   
+    return {'ordinal_date': x.toordinal()}
+    
+def get_month(x):
+    &quot;&quot;&quot;Returns name of the month of a given x date
+    &quot;&quot;&quot; 
+    return {
+        calendar.month_name[month]: month ==  pd.to_datetime(x).month
+        for month in range(1, 13)
+    }
+
+def get_month_distances(x):
+    return {
+        calendar.month_name[month]: math.exp(-(x.month - month) ** 2)
+        for month in range(1, 13)
+    }
+
+model_statistic_regressor = compose.Pipeline(
+    ('ordinal_date', compose.FuncTransformer(get_ordinal_date)),
+    ('scale', preprocessing.StandardScaler()),
+    #('static_reg', dummy.StatisticRegressor(utils.Rolling( stats.Mean(), window_size=10)))
+    ('statistic_reg', StatisticRegressor (stats.Shift(1))) #Consejo de Txus,empezar por algo sencillo y sin ventana ya que los demas no tienen ventana
+)
+
+model_lin_reg = compose.Pipeline(
+    ('ordinal_date', compose.FuncTransformer(get_ordinal_date)),
+    ('scale', preprocessing.StandardScaler()),
+    ('lin_reg', linear_model.LinearRegression(optimizer=optim.SGD(0.07))) #habria que tener en cuenta el lr_intercep
+)
+
+model_hft_reg = compose.Pipeline(
+    ('ordinal_date', compose.FuncTransformer(get_ordinal_date)),
+    ('scale', preprocessing.StandardScaler()),
+    #('HFT_reg', tree.HoeffdingTreeRegressor(grace_period=1,leaf_prediction =&quot;adaptive&quot;,model_selector_decay=0.7,min_samples_split=5)) 
+   ('HFT_reg', tree.HoeffdingTreeRegressor(grace_period=20,leaf_prediction =&quot;model&quot;, leaf_model=linear_model.LinearRegression(optimizer=optim.SGD(0.08)))) 
+)
+
+model_stg_reg = compose.Pipeline(
+    ('ordinal_date', compose.FuncTransformer(get_ordinal_date)),
+    ('scale', preprocessing.StandardScaler()),
+    ('SGT_reg', tree.SGTRegressor(gamma=0.5,grace_period=1,delta=0.1,lambda_value=0.2,feature_quantizer=tree.splitter.DynamicQuantizer(std_prop=0.8))) #SE ha tenido que parametrizar si no elresultado era malísimo
+)
+
+def evaluate_model(model,df_data,column,ax,etiqueta,check_drift=False, check_outliers=False, is_data_drifted=False): 
+    &quot;&quot;&quot;Calculate the metrics of the model and  model learning  without excluding outliers
+       @check_drift: Boolean to check if we need to plot drifts or not
+       @etiqueta: kind of model used [linear, stg, hft, statistic]
+       @check_outliers: flag to see if checking outliers is needed or not
+       @is_data_drifted: boolean, indicates wether the data is drifted or not. Helps to check the message in df_datos
+    &quot;&quot;&quot;
+    metric = utils.Rolling(metrics.MAE(), 52)#52 semanas tiene el año que es un ciclo completo
+    drifts=[]
+    dates = []
+    y_trues = []
+    y_preds = []
+    std=df_data.std()
+    mean=df_data.mean()
+    outlier_value= mean+(3*std)
+    if is_data_drifted :
+      mensaje=&quot;3 MAE Datos con drift y sin usar adaptacion al drift&quot;
+    elif check_outliers:
+      mensaje=&quot;2 MAE Datos sin drift y tratando outliers&quot;
+    else:
+      mensaje =&quot;1 MAE Datos sin drift y sin tratar outliers&quot;
+    #print (mensaje)
+    #Inicializamos el detector de Drift, aqui solo queremos el drift para marcar las líneas verticales
+    drift_detector = drift.ADWIN()
+  
+    i=0 #valor para añadir filas a los dataframes
+    for x, y in df_data.T.iteritems():
+      #Comprobamos si hay hay algun dríft. Lo añadimos a la lista para pintar la linea vertical
+      if check_drift:
+        drift_detector.update(y)
+        if drift_detector.drift_detected:
+           drifts.append(x)
+      if  (check_outliers and y&gt; outlier_value) :# Get rid  off outliers
+        None
+      else: #Trabajamos normalemente
+        # Obtain the prior prediction and update the model in one go
+        y_pred = model.predict_one(x)
+              
+        model.learn_one(x, y)
+        # Update the error metric
+        metric.update(y, y_pred)
+
+        #get metric value for plotting
+        if check_outliers==False:
+          if etiqueta==&quot;linear&quot;:
+            df_error_mae_linear.at[i,column] =metric.get()
+          elif etiqueta=='stg':
+            df_error_mae_stg.at[i,column] =metric.get()
+          elif etiqueta=='hft':
+            df_error_mae_hft.at[i,column] =metric.get()
+          elif etiqueta=='base_line':
+            df_error_mae_baseline.at[i,column] =metric.get()
+        else:
+          if etiqueta==&quot;linear&quot;:
+            df_error_mae_linear_sin_outliers.at[i,column] =metric.get()
+          elif etiqueta=='stg':
+            df_error_mae_stg_sin_outliers.at[i,column] =metric.get()
+          elif etiqueta=='hft':
+            df_error_mae_hft_sin_outliers.at[i,column] =metric.get()
+          elif etiqueta=='base_line':
+            df_error_mae_baseline_sin_outliers.at[i,column] =metric.get()
+
+        i=i+1
+        
+        # Store the true value and the prediction
+        dates.append(x)
+        y_trues.append(y)
+        y_preds.append(y_pred)
+          
+    
+    # Plot the results
+    # fig, ax = plt.subplots(figsize=(9, 5))
+    value=round(metric.get(),2)
+    
+    if drifts is not None and check_drift:
+      for drift_detected in drifts:
+              ax.axvline(drift_detected, color='red')
+    ax.grid(alpha=0.75)
+    ax.plot(dates, y_trues, lw=3, color='#2ecc71', alpha=0.8, label='Ground truth')
+    ax.plot(dates, y_preds, lw=3, color='#e74c3c', alpha=0.8, label='Prediction')
+    ax.legend()
+    ax.set_title(metric) 
+    ax.set_xlabel(column)
+    ax.set_ylabel(label_num_casos)
+
+    #Añadimos filas con los datos para cada columna
+    df_datos.at['Num Registros', column] = len(df_data)
+    df_datos.at[mensaje+ ' '+etiqueta, column] = value
+    
+  
+
+def evaluate_model_without_outliers(model,df_data,column,ax,etiqueta): 
+
+    &quot;&quot;&quot;Calculate the metrics of the model and  model learning excluding outliers, but considering drift
+        @etiqueta: kind of model used [linear, stg, hft, statistic]
+    &quot;&quot;&quot;
+    metric = utils.Rolling(metrics.MAE(), 52)#52 semanas tiene el año que es un ciclo completo
+    dates = []
+    y_trues = []
+    y_preds = []
+    drifts = []
+    std=df_data.std()
+    mean=df_data.mean()
+    outlier_value= mean+(3*std)
+
+    #Contador de outliers
+    num_outliers=0
+
+    #Inicializamos el detector de Drift
+    drift_detector = drift.ADWIN()
+
+    #contador de Drifts
+    num_drifts = 0 
+    i=0
+   # print (&quot;columna&quot;, column)
+    #print (&quot;num_drifts &quot;,num_drifts)
+    for x, y in df_data.T.iteritems():
+     
+      # Obtain the prior prediction and update the model in one go
+       
+      drift_detector.update(y)
+      if not drift_detector.drift_detected:
+        if  (y&lt;=outlier_value) :# Get rid  off outliers
+          y_pred = model.predict_one(x)
+          model.learn_one(x, y)
+          # Update the error metric
+          metric.update(y, y_pred)
+
+          #get metric value for plotting
+          #print (&quot;i &quot;,i)
+          if etiqueta==&quot;linear&quot;:
+            df_error_mae_linear_concept.at[i,column] =metric.get()
+          elif etiqueta=='stg':
+            df_error_mae_stg_concept.at[i,column] =metric.get()
+          elif etiqueta=='hft':
+            df_error_mae_hft_concept.at[i,column] =metric.get()
+          elif etiqueta=='base_line':
+            df_error_mae_baseline_concept.at[i,column] =metric.get()
+
+                  
+          # Store the true value and the prediction
+          dates.append(x)
+          y_trues.append(y)
+          y_preds.append(y_pred)
+          i=i+1
+        #  print (&quot;num_drifts if&quot;,num_drifts)
+        else:
+         num_outliers=num_outliers+1
+        
+      else:
+        num_drifts=num_drifts+1
+        model=model.clone() #reiniciamos el modelo y el detector de drift
+        drift_detector = drift.ADWIN()
+        drifts.append(x)
+        
+        # print (&quot;num_drifts else&quot;,num_drifts)
+        # print(f&quot;Change detected at index {i}, input value: {y}&quot;)
+         
+         
+      # Plot the results
+  # fig, ax = plt.subplots(figsize=(9, 5))
+    value=round(metric.get(),2)
+    
+
+    if drifts is not None:
+      for drift_detected in drifts:
+              ax.axvline(drift_detected, color='red')
+    ax.grid(alpha=0.75)
+    ax.plot(dates, y_trues, lw=3, color='#2ecc71', alpha=0.8, label='Ground truth')
+    ax.plot(dates, y_preds, lw=3, color='#e74c3c', alpha=0.8, label='Prediction')
+    ax.legend()
+    ax.set_title(metric) 
+    ax.set_xlabel(column)
+    ax.set_ylabel(label_num_casos)
+    #Añadimos filas con los datos para cada columna, esto es para hacer una tabla resumen. Ya veremos como
+    # print (&quot;num_drifts total&quot;,num_drifts)
+  
+    df_datos.at['STD', column] = round(std,2)
+    df_datos.at['MEAN', column] = round(mean,2)
+    df_datos.at['Num Outliers', column] = num_outliers
+    df_datos.at['Num Drifts', column] = num_drifts
+    df_datos.at['4 MAE usando deteccion y adaptacion al drift_'+etiqueta, column] = value
+    
+
+</code></pre>
+<h3 id="graficas-y-nowcasting-con-los-diferentes-modelos">2.1.1 Graficas y Nowcasting con los diferentes modelos.</h3>
+<p>En este apartado se muestra la evolución del error, MAE,  con respecto a los valores reales y sus predicciones, para cada una de las ciudades y modelo respectivo.</p>
+<h4 id="hoeffding-tree-regressor">2.1.1.1 Hoeffding Tree Regressor.</h4>
+<p>En este apartado mostraremos el comportamiento del modelo.</p>
+<h5 id="hoeffding-tree-regressor-sin-tratar-los-outliers">2.1.1.1.1 Hoeffding Tree Regressor, sin tratar los outliers</h5>
+<pre><code class="language-python">#Hoeffding Tree Regressor Model
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_model(model_hft_reg.clone(),df_data,label,ax,etiqueta=&quot;hft&quot;,check_drift=False,check_outliers=False,is_data_drifted=False)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo, sin tratar los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_33_0.png" alt="png" /></p>
+<h5 id="hoeffding-tree-regressor-tratando-los-outliers">2.1.1.1.2 Hoeffding Tree Regressor, tratando los outliers</h5>
+<pre><code class="language-python">#Hoeffding Tree Regressor Model
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_model(model_hft_reg.clone(),df_data,label,ax,etiqueta=&quot;hft&quot;,check_drift=False,check_outliers=True,is_data_drifted=False)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo, tratando los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_35_0.png" alt="png" /></p>
+<h4 id="linear-regressor-model-sin-tener-en-cuenta-los-outliers">2.1.1.2 Linear Regressor Model, sin tener en cuenta los outliers.</h4>
+<h5 id="linear-regressor-model-sin-tratar-los-outliers">2.1.1.2.1 Linear Regressor Model, sin tratar los outliers</h5>
+<pre><code class="language-python">#Linear Regressor Model
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_model(model_lin_reg.clone(),df_data,label,ax,etiqueta=&quot;linear&quot;,check_drift=False,check_outliers=False,is_data_drifted=False)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo, sin tratar los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_38_0.png" alt="png" /></p>
+<h5 id="linear-regressor-model-tratando-los-outliers">2.1.1.2.2 Linear Regressor Model, tratando los outliers.</h5>
+<pre><code class="language-python">#Linear Regressor Model
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_model(model_lin_reg.clone(),df_data,label,ax,etiqueta=&quot;linear&quot;,check_drift=False,check_outliers=True,is_data_drifted=False)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo, tratando los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_40_0.png" alt="png" /></p>
+<h4 id="sgt-regressor-stochastic-gradient-tree-for-regression-model">2.1.1.3 SGT Regressor (Stochastic Gradient Tree for Regression) Model.</h4>
+<h5 id="sgt-regressor-stochastic-gradient-tree-for-regression-model-sin-tener-en-cuenta-los-outliers">2.1.1.3.1 SGT Regressor (Stochastic Gradient Tree for Regression) Model, sin tener en cuenta los outliers.</h5>
+<pre><code class="language-python">#evaluate_model(model_stg_reg)
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_model(model_stg_reg.clone(),df_data,label,ax,etiqueta=&quot;stg&quot;,check_drift=False,check_outliers=False,is_data_drifted=False)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo, sin tratar los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_43_0.png" alt="png" /></p>
+<h5 id="sgt-regressor-stochastic-gradient-tree-for-regression-model-tratando-los-outliers">2.1.1.3.2 SGT Regressor (Stochastic Gradient Tree for Regression) Model, tratando los outliers.</h5>
+<pre><code class="language-python">#evaluate_model(model_stg_reg)
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_model(model_stg_reg.clone(),df_data,label,ax,etiqueta=&quot;stg&quot;,check_drift=False,check_outliers=True,is_data_drifted=False)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo, tratando los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_45_0.png" alt="png" /></p>
+<h4 id="statistic-regressor-mode-dummy.devuelve-el-valor-en-el-instante-anterior">2.1.1.4 Statistic Regressor Mode (Dummy). Devuelve el valor en el instante anterior.</h4>
+<h5 id="statistic-regressor-mode-dummy.devuelve-el-valor-en-el-instante-anterior-sin-tener-en-cuenta-los-outliers">2.1.1.4.1 Statistic Regressor Mode (Dummy). Devuelve el valor en el instante anterior, sin tener en cuenta los outliers.</h5>
+<pre><code class="language-python">#evaluate_model(model_statistc_regressor)
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_model(model_statistic_regressor.clone(),df_data,label,ax,etiqueta=&quot;base_line&quot;,check_drift=False,check_outliers=False,is_data_drifted=False)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo, sin tratar los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_48_0.png" alt="png" /></p>
+<h5 id="statistic-regressor-mode-dummy.devuelve-el-valor-en-el-instante-anterior-tratando-los-outliers">2.1.1.4.2 Statistic Regressor Mode (Dummy). Devuelve el valor en el instante anterior, tratando los outliers.</h5>
+<pre><code class="language-python">#evaluate_model(model_statistc_regressor)
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_model(model_statistic_regressor.clone(),df_data,label,ax,etiqueta=&quot;base_line&quot;,check_drift=False,check_outliers=True,is_data_drifted=False)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo Dummy, tratando los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_50_0.png" alt="png" /></p>
+<h4 id="graficas-comparacion-de-la-metrica-de-error-seleccionada-mae">2.1.1.5 Gráficas, comparación de la métrica de error seleccionada (MAE).</h4>
+<p>Se compara la evolución del error, MAE, de cada uno de los 4 modelos para cada ciudad.Se puede comprobar que de los 4 el mejor modelo es el Linear Regression y el Hoeffing Tree Regressor ya que éste tiene en las hojas un modelo de regresión Lineal (Linear Regressor).Estas dos métricas en las gráficas casi estan solapadas por que soy muy parecidas.</p>
+<h5 id="graficas-comparacion-de-la-metrica-de-error-seleccionada-maecon-baseline-sin-tratat-los-outliers-para-cada-ciudad">2.1.1.5.1 Graficas, comparación de la métrica de error seleccionada (MAE)con baseline, sin tratat los outliers, para cada ciudad.</h5>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_baseline[label].plot(ax=ax)
+        df_error_mae_stg[label].plot(ax=ax)
+        df_error_mae_linear[label].plot(ax=ax)
+        df_error_mae_hft[label].plot(ax=ax)
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        ax.legend([&quot;Baseline&quot;, &quot;SGTRegressor&quot;,&quot;LinearRegressor&quot;,&quot;HFTreeRegressor&quot;]);
+        i += 1
+fig.suptitle(&quot;Comparación de la métrica de error seleccionada (MAE)con baseline, sin tratat los outliers, para cada ciudad&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_53_0.png" alt="png" /></p>
+<h5 id="graficas-comparacion-de-la-metrica-de-error-seleccionada-maecon-baseline-tratando-los-outliers-para-cada-ciudad">2.1.1.5.2 Graficas, comparación de la métrica de error seleccionada (MAE)con baseline tratando los outliers, para cada ciudad.</h5>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_baseline_sin_outliers[label].plot(ax=ax)
+        df_error_mae_stg_sin_outliers[label].plot(ax=ax)
+        df_error_mae_linear_sin_outliers[label].plot(ax=ax)
+        df_error_mae_hft_sin_outliers[label].plot(ax=ax)
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        ax.legend([&quot;Baseline&quot;, &quot;SGTRegressor&quot;,&quot;LinearRegressor&quot;,&quot;HFTreeRegressor&quot;]);
+        i += 1
+fig.suptitle(&quot;Comparación de la métrica de error seleccionada (MAE)con baseline, tratando los outliers, para cada ciudad&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_55_0.png" alt="png" /></p>
+<h4 id="graficas-de-cada-regresor-para-cada-ciudad-comparando-la-evolucion-del-error-tratando-los-outliers-vs-sin-tratarlor">2.1.1.6  Graficas de cada regresor <strong>para cada ciudad</strong> comparando la evolución del error tratando los outliers vs sin tratarlor.</h4>
+<h6 id="hoeffding-tree-regressor-comparando-la-evolucion-del-error-tratando-los-outliers-vs-sin-tratarlos">2.1.1.6.1  Hoeffding Tree Regressor, comparando la evolución del error Tratando los outliers vs Sin tratarlos.</h6>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_hft[label].plot(ax=ax)
+        df_error_mae_hft_sin_outliers[label].plot(ax=ax)
+        ax.legend([&quot;Sin tratar outliers&quot;, &quot;Tratando Outliers&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot; Hoeffding Tree Regressor comparación de evolución del error&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_58_0.png" alt="png" /></p>
+<h6 id="lineartree-regressor-comparando-la-evolucion-del-error-tratando-los-outliers-vs-sin-tratarlos">2.1.1.6.2  LinearTree Regressor, comparando la evolución del error Tratando los outliers vs Sin tratarlos.</h6>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_linear[label].plot(ax=ax)
+        df_error_mae_linear_sin_outliers[label].plot(ax=ax)
+        ax.legend([&quot;Sin tratar outliers&quot;, &quot;Tratando Outliers&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot;Linear Tree Regressor comparación de evolución del error&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_60_0.png" alt="png" /></p>
+<h6 id="stochastic-gradient-tree-regressor-comparando-la-evolucion-del-error-tratando-los-outliers-vs-sin-tratarlos">2.1.1.6.3  Stochastic Gradient Tree Regressor, comparando la evolución del error Tratando los outliers vs Sin tratarlos.</h6>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_stg[label].plot(ax=ax)
+        df_error_mae_stg_sin_outliers[label].plot(ax=ax)
+        ax.legend([&quot;Sin tratar outliers&quot;, &quot;Tratando Outliers&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot;Stochastic Gradient Tree Regressor comparación de evolución del error&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_62_0.png" alt="png" /></p>
+<h6 id="statistict-regressor-dummy-comparando-la-evolucion-del-error-tratando-los-outliers-vs-sin-tratarlos">2.1.1.6.4  Statistict Regressor (DUMMY), comparando la evolución del error Tratando los outliers vs Sin tratarlos.</h6>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_baseline[label].plot(ax=ax)
+        df_error_mae_baseline_sin_outliers[label].plot(ax=ax)
+        ax.legend([&quot;Sin tratar outliers&quot;, &quot;Tratando Outliers&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot;Stochastic Gradient Tree Regressor comparación de evolución del error&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_64_0.png" alt="png" /></p>
+<h3 id="creando-concept-drift">2.1.2 Creando Concept Drift</h3>
+<p>Se ha incorporado un Concept Drift de forma artificial para ver el comportamiento del algoritmo con los datos de la viruela.</p>
+<pre><code class="language-python">#Creamos el Concept Drift , para analizar los datos
+df_data_orig_drifted=data_orig.copy()
+for column in df_data_orig_drifted.columns:
+   for index, value in df_data_orig_drifted[column].items(): 
+    if (index &gt;=pd.Timestamp('2008-01-01') and index &lt;=pd.Timestamp('2011-12-30') ):
+        df_data_orig_drifted[column].at[index]= value *0.3
+    
+
+</code></pre>
+<p>Con las siguientes gráficas, se comprueba que efectivamente se ven los Concept Drifts incorporados mediante unas líneas verticales de color rojo.</p>
+<pre><code class="language-python">#Comprobamos que el detector de drift detecta los cambios que hemos introducido mediante gráficas
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        drift_detector = drift.ADWIN()
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=df_data_orig_drifted.columns[i]
+        df_data.plot(ax=ax)
+        for j, val in df_data.items():
+            drift_detector.update(val)   # Data is processed one sample at a time
+            if drift_detector.drift_detected:
+              # The drift detector indicates after each sample if there is a drift in the data
+               #print(f'Change detected at index {j}')
+                ax.axvline(j, color='red')
+        ax.set_xlabel(label)  
+        ax.set_ylabel(label_num_casos)
+        i += 1
+plt.tight_layout()
+plt.show()
+
+</code></pre>
+<p><img src="output_68_0.png" alt="png" /></p>
+<h3 id="graficas-y-nowcasting-con-los-diferentes-modelos-tratando-el-concept-drift-o-no">2.1.3 Graficas y Nowcasting con los diferentes modelos, tratando el Concept Drift o no.</h3>
+<p>En este apartado se muestra la evolución del error, MAE,  con respecto a los valores reales y sus predicciones teniendo en cuenta los outliers y la deteccion del Concep Drift inducido en los datos.</p>
+<h4 id="hoeffding-tree-regressor-model">2.1.3.1 Hoeffding Tree Regressor Model.</h4>
+<p>En este apartado mostraremos el comportamiento del modelo a partir del drift que hemos inducido artificialmente, con un detector de drift como es el ADWIN  y como se comportará el modelo sin un detector de drift. Claramente se puede observar en las gráficas que el error, MAE, es menor cuando se adapta el modelo al drift.</p>
+<h5 id="hoeffding-tree-regressor-con-drift-en-los-datos-y-usando-deteccion-y-adaptacion-al-drift">2.1.3.1.1 Hoeffding Tree Regressor, con drift en los datos y usando detección y adaptación al drift</h5>
+<pre><code class="language-python">#evaluate_model(model_hft_reg)
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=df_data_orig_drifted.columns[i]
+        evaluate_model_without_outliers (model_hft_reg.clone(),df_data,label,ax,&quot;hft&quot;)
+        i += 1
+fig.suptitle(&quot;Hoeffding Tree Regressor model, adaptánsose al Concept Drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_72_0.png" alt="png" /></p>
+<h5 id="hoeffding-tree-regressor-con-drift-en-los-datos-y-sin-usar-deteccion-y-adaptacion-al-drift">2.1.3.1.2 Hoeffding Tree Regressor, con drift en los datos y sin usar detección y adaptación al drift</h5>
+<pre><code class="language-python">#evaluate_model(model_hft_reg)
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=df_data_orig_drifted.columns[i]
+        evaluate_model(model_hft_reg.clone(),df_data,label,ax,etiqueta=&quot;hft&quot;,check_drift=True,is_data_drifted=True)
+        i += 1
+fig.suptitle(&quot;Hoeffding Tree Regressor model, sin adaptación al Concept Drift&quot;, fontsize=20)
+
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_74_0.png" alt="png" /></p>
+<h4 id="linear-regressor-model">2.1.3.2 Linear Regressor Model</h4>
+<p>En este caso se comprueba lo mismo con el el Hoeffding Tree Regressor. Al adaptarse al drift, el error es menor que sin adaptación al drift.</p>
+<h5 id="linear-regressor-con-drift-en-los-datos-y-usando-deteccion-y-adaptacion-al-drift">2.1.3.2.1 Linear Regressor, con drift en los datos y usando detección y adaptación al drift</h5>
+<pre><code class="language-python">#Modelo linear Regressor
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=df_data_orig_drifted.columns[i]
+        evaluate_model_without_outliers(model_lin_reg.clone(),df_data,label,ax,&quot;linear&quot;)
+        i += 1
+fig.suptitle(&quot;Linear Regressor model, adaptánsose al Concept Drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_77_0.png" alt="png" /></p>
+<h5 id="linear-regressor-con-drift-en-los-datos-y-sin-usar-deteccion-y-adaptacion-al-drift">2.1.3.1.2 Linear Regressor, con drift en los datos y sin usar detección y adaptación al drift</h5>
+<pre><code class="language-python">#Modelo linear Regressor
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=df_data_orig_drifted.columns[i]
+        evaluate_model(model_lin_reg.clone(),df_data,label,ax,etiqueta=&quot;linear&quot;,check_drift=True,is_data_drifted=True)
+        i += 1
+fig.suptitle(&quot;Linear Regressor model, sin adaptación al Concept Drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_79_0.png" alt="png" /></p>
+<h4 id="sgt-regressor-stochastic-gradient-tree-for-regression-model-1">2.1.3.3 SGT Regressor (Stochastic Gradient Tree for Regression) Model.</h4>
+<p>Aunque este modelo es el que pero se comporta en general, también se puede comprobar como la adaptación al drift provoca una disminución en el error,MAE, obtenido.</p>
+<h5 id="stochastic-gradient-tree-regressor-con-drift-en-los-datos-y-usando-deteccion-y-adaptacion-al-drift">2.1.3.3.1 Stochastic Gradient Tree Regressor, con drift en los datos y usando detección y adaptación al drift.</h5>
+<pre><code class="language-python">#evaluate_model(model_stg_reg)
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=df_data_orig_drifted.columns[i]
+        evaluate_model_without_outliers(model_stg_reg.clone(),df_data,label,ax,&quot;stg&quot;)
+        i += 1
+fig.suptitle(&quot;tochastic Gradient Tree Regressor, adaptánsose al Concept Drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_82_0.png" alt="png" /></p>
+<h5 id="stochastic-gradient-tree-regressor-con-drift-en-los-datos-y-sin-usar-deteccion-y-adaptacion-al-drift">2.1.3.3.2 Stochastic Gradient Tree Regressor, con drift en los datos y sin usar detección y adaptación al drift.</h5>
+<pre><code class="language-python">#evaluate_model(model_stg_reg)
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=df_data_orig_drifted.columns[i]
+        evaluate_model(model_stg_reg.clone(),df_data,label,ax,etiqueta=&quot;stg&quot;,check_drift=True,is_data_drifted=True)
+        i += 1
+fig.suptitle(&quot;tochastic Gradient Tree Regressor sin adaptación al Concept Drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_84_0.png" alt="png" /></p>
+<h4 id="statistic-regressor-model-dummy.devuelve-el-valor-en-el-instante-anterior">2.1.3.3 Statistic Regressor Model (Dummy). Devuelve el valor en el instante anterior.</h4>
+<p>Este modelo, simplemente es el &quot;modelo a batir&quot; y aunque su predicción sea simplemente devolver el valor en el instante anterior, se puede comprobar que la adaptación al drift, hace que el error, MAE, sea menor.</p>
+<h5 id="statistic-regressor-con-drift-en-los-datos-y-usando-deteccion-y-adaptacion-al-drift">2.1.3.3.1 Statistic Regressor, con drift en los datos y usando detección y adaptación al drift.</h5>
+<pre><code class="language-python">#Model Statistic Regressor
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=df_data_orig_drifted.columns[i]
+        evaluate_model_without_outliers(model_statistic_regressor.clone(),df_data,label,ax,&quot;base_line&quot;)
+        i += 1
+fig.suptitle(&quot;Statistic Regressor Model (Dummy),adaptánsose al Concept Drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_87_0.png" alt="png" /></p>
+<h5 id="statistic-regressor-con-drift-en-los-datos-y-sin-usar-deteccion-y-adaptacion-al-drift">2.1.3.3.2 Statistic Regressor, con drift en los datos y sin usar detección y adaptación al drift.</h5>
+<pre><code class="language-python">#Model Statistic Regressor
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:,i]
+        label=df_data_orig_drifted.columns[i]
+        evaluate_model(model_statistic_regressor.clone(),df_data,label,ax,etiqueta=&quot;base_line&quot;,check_drift=True,is_data_drifted=True)
+        i += 1
+fig.suptitle(&quot;Statistic Regressor Model (Dummy), sin adaptación al Concept Drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_89_0.png" alt="png" /></p>
+<h3 id="graficas-comparacion-de-la-metrica-de-error-seleccionada-maesegun-los-diferentes-modelos-para-cada-ciudatd-teniendo-en-cuenta-los-outliers-y-detectando-y-adaptandose-al-concept-drift">2.1.4  Graficas, comparación de la métrica de error seleccionada (MAE)según los diferentes modelos para cada ciudatd, teniendo en cuenta los outliers y detectando y adaptandose al Concept Drift.</h3>
+<p>En este apartado se comprueba como los modelos que incorporan un detector de Drift, ante una situación de Concept Drift en los datos, estos se adaptan mejor. Se adaptan antes y con mas suavidad que los modelos sin incorporar detector de drift</p>
+<h5 id="graficas-de-la-evolucion-del-error-por-regresor-con-drift-en-los-datos-y-usando-deteccion-y-adaptacion-al-drift">2.1.3.4.1 Gráficas de la evolución del error por regresor, con drift en los datos y usando detección y adaptación al drift.</h5>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_baseline_concept[label].plot(ax=ax)
+        df_error_mae_stg_concept[label].plot(ax=ax)
+        df_error_mae_linear_concept[label].plot(ax=ax)
+        df_error_mae_hft_concept[label].plot(ax=ax)
+        ax.legend([&quot;Baseline&quot;, &quot;SGTRegressor&quot;,&quot;LinearRegressor&quot;,&quot;HFTreeRegressor&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot;Gráficas de evolución del error con drift en los datos y adaptación al drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_92_0.png" alt="png" /></p>
+<h5 id="graficas-de-la-evolucion-del-error-por-regresor-con-drift-en-los-datos-y-sin-usar-deteccion-y-adaptacion-al-drift">2.1.3.4.2 Gráficas de la evolución del error por regresor, con drift en los datos y sin usar detección y adaptación al drift.</h5>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_baseline[label].plot(ax=ax)
+        df_error_mae_stg[label].plot(ax=ax)
+        df_error_mae_linear[label].plot(ax=ax)
+        df_error_mae_hft[label].plot(ax=ax)
+        ax.legend([&quot;Baseline&quot;, &quot;SGTRegressor&quot;,&quot;LinearRegressor&quot;,&quot;HFTreeRegressor&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot;Gráficas de evolución del error con drift en los datos pero sin adaptación al drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_94_0.png" alt="png" /></p>
+<h3 id="graficas-de-cada-regresor-para-cada-ciudad-comparando-la-evolucion-del-error-contemplando-el-drift-y-adaptandose-al-drift-o-sin-adaptarse">2.1.5  Graficas de cada regresor <strong>para cada ciudad</strong> comparando la evolución del error contemplando el drift y adaptándose al drift o sin adaptarse.</h3>
+<h5 id="hoeffding-tree-regressor-comparando-la-evolucion-del-error-con-drift-en-los-datos-usando-deteccion-y-adaptacion-al-drift-y-sin-usar-deteccion-de-drift">2.1.5.1  Hoeffding Tree Regressor, comparando la evolución del error con drift en los datos usando detección y adaptación al drift, y sin usar detección de drift.</h5>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_hft[label].plot(ax=ax)
+        df_error_mae_hft_concept[label].plot(ax=ax)
+        ax.legend([&quot;Sin contemplar Drift&quot;, &quot;Tratando Drift&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot; Hoeffding Tree Regressor comparación de evolución del error&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_97_0.png" alt="png" /></p>
+<h5 id="linear-regressor-comparando-la-evolucion-del-error-con-drift-en-los-datos-usando-deteccion-y-adaptacion-al-drift-y-sin-usar-deteccion-de-drift">2.1.5.2  Linear Regressor, comparando la evolución del error con drift en los datos usando detección y adaptación al drift, y sin usar detección de drift.</h5>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_linear[label].plot(ax=ax)
+        df_error_mae_linear_concept[label].plot(ax=ax)
+        ax.legend([&quot;Sin contemplar Drift&quot;, &quot;Tratando Drift&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot;Linear Regressor comparación de evolución del error&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_99_0.png" alt="png" /></p>
+<h5 id="stochastic-gradient-tree-regressor-comparando-la-evolucion-del-error-con-drift-en-los-datos-usando-deteccion-y-adaptacion-al-drift-y-sin-usar-deteccion-de-drift">2.1.5.3  Stochastic Gradient Tree Regressor, comparando la evolución del error con drift en los datos usando detección y adaptación al drift, y sin usar detección de drift.</h5>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_stg[label].plot(ax=ax)
+        df_error_mae_stg_concept[label].plot(ax=ax)
+        ax.legend([&quot;Sin contemplar Drift&quot;, &quot;Tratando Drift&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot;Stochastic Gradient Tree Regressor comparación de evolución del error&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_101_0.png" alt="png" /></p>
+<h5 id="statistic-regressor-dummy-comparando-la-evolucion-del-error-con-drift-en-los-datos-usando-deteccion-y-adaptacion-al-drift-y-sin-usar-deteccion-de-drift">2.1.5.  Statistic Regressor (Dummy), comparando la evolución del error con drift en los datos usando detección y adaptación al drift, y sin usar detección de drift.</h5>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        label=data_orig.columns[i]
+        ax.set_title(label)
+        df_error_mae_baseline[label].plot(ax=ax)
+        df_error_mae_baseline_concept[label].plot(ax=ax)
+        ax.legend([&quot;Sin contemplar Drift&quot;, &quot;Tratando Drift&quot;]);
+        ax.set_xlabel(label_num_casos)
+        ax.set_ylabel(&quot;MAE&quot;)
+        i += 1
+fig.suptitle(&quot; Statistic Regressor (Dummy), comparación de evolución del error&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_103_0.png" alt="png" /></p>
+<pre><code class="language-python">&quot;&quot;&quot;from river import drift
+ DAtos
+
+
+drift_detector = drift.ADWIN()
+drifts = []
+
+for i, val in df_data_orig_drifted[&quot;BACS&quot;].items():
+    drift_detector.update(val)   # Data is processed one sample at a time
+    if drift_detector.drift_detected:
+        # The drift detector indicates after each sample if there is a drift in the data
+        print(f&quot;Change detected at index {i}, input value: {val}&quot;)
+        drifts.append(i)
+
+plot_data(df_data_orig_drifted[&quot;BACS&quot;], drifts)&quot;&quot;&quot;
+</code></pre>
+<pre><code>'from river import drift\n DAtos\n\n\ndrift_detector = drift.ADWIN()\ndrifts = []\n\nfor i, val in df_data_orig_drifted[&quot;BACS&quot;].items():\n    drift_detector.update(val)   # Data is processed one sample at a time\n    if drift_detector.drift_detected:\n        # The drift detector indicates after each sample if there is a drift in the data\n        print(f&quot;Change detected at index {i}, input value: {val}&quot;)\n        drifts.append(i)\n\nplot_data(df_data_orig_drifted[&quot;BACS&quot;], drifts)'
+</code></pre>
+<h3 id="tabla-de-resultados">Tabla de resultados</h3>
+<pre><code class="language-python">#Tabla con recopilación de los datos
+df_datos.drop(columns=['Total_Casos']).sort_index(ascending=True)
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>BUDAPEST</th>
+      <th>BARANYA</th>
+      <th>BACS</th>
+      <th>BEKES</th>
+      <th>BORSOD</th>
+      <th>CSONGRAD</th>
+      <th>FEJER</th>
+      <th>GYOR</th>
+      <th>HAJDU</th>
+      <th>HEVES</th>
+      <th>JASZ</th>
+      <th>KOMAROM</th>
+      <th>NOGRAD</th>
+      <th>PEST</th>
+      <th>SOMOGY</th>
+      <th>SZABOLCS</th>
+      <th>TOLNA</th>
+      <th>VAS</th>
+      <th>VESZPREM</th>
+      <th>ZALA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1 MAE Datos sin drift y sin tratar outliers base_line</th>
+      <td>48.1</td>
+      <td>13.25</td>
+      <td>38.54</td>
+      <td>13.02</td>
+      <td>37.21</td>
+      <td>22.63</td>
+      <td>17.58</td>
+      <td>17.65</td>
+      <td>28.94</td>
+      <td>20.62</td>
+      <td>23.94</td>
+      <td>9.81</td>
+      <td>10.6</td>
+      <td>37.19</td>
+      <td>12.94</td>
+      <td>13.79</td>
+      <td>13.23</td>
+      <td>15.27</td>
+      <td>20.33</td>
+      <td>18.81</td>
+    </tr>
+    <tr>
+      <th>1 MAE Datos sin drift y sin tratar outliers hft</th>
+      <td>43.35</td>
+      <td>9.79</td>
+      <td>29.93</td>
+      <td>11.93</td>
+      <td>28.64</td>
+      <td>19.94</td>
+      <td>14.73</td>
+      <td>14.42</td>
+      <td>22.13</td>
+      <td>14.67</td>
+      <td>19.0</td>
+      <td>8.1</td>
+      <td>8.29</td>
+      <td>30.44</td>
+      <td>12.19</td>
+      <td>12.99</td>
+      <td>10.5</td>
+      <td>11.23</td>
+      <td>14.64</td>
+      <td>14.8</td>
+    </tr>
+    <tr>
+      <th>1 MAE Datos sin drift y sin tratar outliers linear</th>
+      <td>42.75</td>
+      <td>9.79</td>
+      <td>29.59</td>
+      <td>12.0</td>
+      <td>28.6</td>
+      <td>19.73</td>
+      <td>14.64</td>
+      <td>14.46</td>
+      <td>22.25</td>
+      <td>14.65</td>
+      <td>19.14</td>
+      <td>8.04</td>
+      <td>8.44</td>
+      <td>30.2</td>
+      <td>11.98</td>
+      <td>12.92</td>
+      <td>10.24</td>
+      <td>11.18</td>
+      <td>14.39</td>
+      <td>14.55</td>
+    </tr>
+    <tr>
+      <th>1 MAE Datos sin drift y sin tratar outliers stg</th>
+      <td>50.96</td>
+      <td>14.39</td>
+      <td>30.51</td>
+      <td>16.69</td>
+      <td>37.2</td>
+      <td>23.59</td>
+      <td>20.65</td>
+      <td>17.5</td>
+      <td>30.1</td>
+      <td>21.96</td>
+      <td>27.11</td>
+      <td>10.77</td>
+      <td>11.77</td>
+      <td>39.3</td>
+      <td>12.57</td>
+      <td>15.34</td>
+      <td>10.48</td>
+      <td>13.34</td>
+      <td>22.86</td>
+      <td>18.15</td>
+    </tr>
+    <tr>
+      <th>2 MAE Datos sin drift y tratando outliers base_line</th>
+      <td>38.46</td>
+      <td>13.25</td>
+      <td>22.33</td>
+      <td>13.02</td>
+      <td>37.21</td>
+      <td>22.38</td>
+      <td>17.58</td>
+      <td>17.65</td>
+      <td>28.94</td>
+      <td>20.62</td>
+      <td>23.94</td>
+      <td>9.81</td>
+      <td>10.6</td>
+      <td>37.19</td>
+      <td>12.94</td>
+      <td>13.79</td>
+      <td>13.23</td>
+      <td>15.27</td>
+      <td>20.33</td>
+      <td>10.96</td>
+    </tr>
+    <tr>
+      <th>2 MAE Datos sin drift y tratando outliers hft</th>
+      <td>37.32</td>
+      <td>9.78</td>
+      <td>17.93</td>
+      <td>11.93</td>
+      <td>28.64</td>
+      <td>17.29</td>
+      <td>14.72</td>
+      <td>14.42</td>
+      <td>22.13</td>
+      <td>14.66</td>
+      <td>19.0</td>
+      <td>8.1</td>
+      <td>8.31</td>
+      <td>30.44</td>
+      <td>12.17</td>
+      <td>12.98</td>
+      <td>10.52</td>
+      <td>11.22</td>
+      <td>14.61</td>
+      <td>8.45</td>
+    </tr>
+    <tr>
+      <th>2 MAE Datos sin drift y tratando outliers linear</th>
+      <td>37.27</td>
+      <td>9.8</td>
+      <td>17.93</td>
+      <td>12.0</td>
+      <td>28.6</td>
+      <td>17.16</td>
+      <td>14.63</td>
+      <td>14.46</td>
+      <td>22.25</td>
+      <td>14.65</td>
+      <td>19.14</td>
+      <td>8.04</td>
+      <td>8.46</td>
+      <td>30.2</td>
+      <td>11.97</td>
+      <td>12.92</td>
+      <td>10.26</td>
+      <td>11.18</td>
+      <td>14.39</td>
+      <td>8.44</td>
+    </tr>
+    <tr>
+      <th>2 MAE Datos sin drift y tratando outliers stg</th>
+      <td>52.99</td>
+      <td>17.74</td>
+      <td>29.63</td>
+      <td>11.42</td>
+      <td>44.95</td>
+      <td>20.46</td>
+      <td>24.93</td>
+      <td>18.86</td>
+      <td>26.89</td>
+      <td>20.93</td>
+      <td>26.45</td>
+      <td>11.02</td>
+      <td>13.6</td>
+      <td>50.93</td>
+      <td>12.7</td>
+      <td>18.37</td>
+      <td>10.59</td>
+      <td>12.16</td>
+      <td>23.04</td>
+      <td>10.46</td>
+    </tr>
+    <tr>
+      <th>3 MAE Datos con drift y sin usar adaptacion al drift base_line</th>
+      <td>48.1</td>
+      <td>13.25</td>
+      <td>38.54</td>
+      <td>13.02</td>
+      <td>37.21</td>
+      <td>22.63</td>
+      <td>17.58</td>
+      <td>17.65</td>
+      <td>28.94</td>
+      <td>20.62</td>
+      <td>23.94</td>
+      <td>9.81</td>
+      <td>10.6</td>
+      <td>37.19</td>
+      <td>12.94</td>
+      <td>13.79</td>
+      <td>13.23</td>
+      <td>15.27</td>
+      <td>20.33</td>
+      <td>18.81</td>
+    </tr>
+    <tr>
+      <th>3 MAE Datos con drift y sin usar adaptacion al drift hft</th>
+      <td>43.35</td>
+      <td>9.79</td>
+      <td>29.93</td>
+      <td>11.93</td>
+      <td>28.64</td>
+      <td>19.94</td>
+      <td>14.73</td>
+      <td>14.42</td>
+      <td>22.13</td>
+      <td>14.67</td>
+      <td>19.0</td>
+      <td>8.1</td>
+      <td>8.29</td>
+      <td>30.44</td>
+      <td>12.19</td>
+      <td>12.99</td>
+      <td>10.5</td>
+      <td>11.23</td>
+      <td>14.64</td>
+      <td>14.8</td>
+    </tr>
+    <tr>
+      <th>3 MAE Datos con drift y sin usar adaptacion al drift linear</th>
+      <td>42.75</td>
+      <td>9.79</td>
+      <td>29.59</td>
+      <td>12.0</td>
+      <td>28.6</td>
+      <td>19.73</td>
+      <td>14.64</td>
+      <td>14.46</td>
+      <td>22.25</td>
+      <td>14.65</td>
+      <td>19.14</td>
+      <td>8.04</td>
+      <td>8.44</td>
+      <td>30.2</td>
+      <td>11.98</td>
+      <td>12.92</td>
+      <td>10.24</td>
+      <td>11.18</td>
+      <td>14.39</td>
+      <td>14.55</td>
+    </tr>
+    <tr>
+      <th>3 MAE Datos con drift y sin usar adaptacion al drift stg</th>
+      <td>52.23</td>
+      <td>14.39</td>
+      <td>30.51</td>
+      <td>15.15</td>
+      <td>35.73</td>
+      <td>23.74</td>
+      <td>20.65</td>
+      <td>21.09</td>
+      <td>32.76</td>
+      <td>24.92</td>
+      <td>27.11</td>
+      <td>10.44</td>
+      <td>11.71</td>
+      <td>35.94</td>
+      <td>12.54</td>
+      <td>15.29</td>
+      <td>10.51</td>
+      <td>13.34</td>
+      <td>22.39</td>
+      <td>14.33</td>
+    </tr>
+    <tr>
+      <th>4 MAE usando deteccion y adaptacion al drift_base_line</th>
+      <td>38.46</td>
+      <td>13.25</td>
+      <td>22.85</td>
+      <td>13.02</td>
+      <td>30.92</td>
+      <td>21.0</td>
+      <td>17.58</td>
+      <td>17.65</td>
+      <td>22.44</td>
+      <td>20.62</td>
+      <td>21.71</td>
+      <td>9.63</td>
+      <td>8.04</td>
+      <td>34.12</td>
+      <td>13.42</td>
+      <td>13.79</td>
+      <td>13.23</td>
+      <td>13.62</td>
+      <td>20.33</td>
+      <td>10.96</td>
+    </tr>
+    <tr>
+      <th>4 MAE usando deteccion y adaptacion al drift_hft</th>
+      <td>37.12</td>
+      <td>11.15</td>
+      <td>18.43</td>
+      <td>11.93</td>
+      <td>24.7</td>
+      <td>16.56</td>
+      <td>14.92</td>
+      <td>14.43</td>
+      <td>17.94</td>
+      <td>14.66</td>
+      <td>15.75</td>
+      <td>8.17</td>
+      <td>6.23</td>
+      <td>26.06</td>
+      <td>12.72</td>
+      <td>12.98</td>
+      <td>10.41</td>
+      <td>9.96</td>
+      <td>16.04</td>
+      <td>8.46</td>
+    </tr>
+    <tr>
+      <th>4 MAE usando deteccion y adaptacion al drift_linear</th>
+      <td>37.06</td>
+      <td>9.82</td>
+      <td>18.48</td>
+      <td>12.0</td>
+      <td>24.77</td>
+      <td>16.44</td>
+      <td>14.62</td>
+      <td>14.47</td>
+      <td>16.13</td>
+      <td>14.65</td>
+      <td>16.05</td>
+      <td>8.14</td>
+      <td>6.39</td>
+      <td>26.09</td>
+      <td>12.46</td>
+      <td>12.92</td>
+      <td>10.15</td>
+      <td>9.96</td>
+      <td>14.37</td>
+      <td>8.44</td>
+    </tr>
+    <tr>
+      <th>4 MAE usando deteccion y adaptacion al drift_stg</th>
+      <td>46.08</td>
+      <td>14.8</td>
+      <td>23.67</td>
+      <td>15.95</td>
+      <td>29.78</td>
+      <td>23.5</td>
+      <td>19.38</td>
+      <td>20.9</td>
+      <td>21.99</td>
+      <td>19.84</td>
+      <td>22.24</td>
+      <td>10.06</td>
+      <td>12.03</td>
+      <td>32.46</td>
+      <td>11.64</td>
+      <td>15.84</td>
+      <td>11.57</td>
+      <td>12.29</td>
+      <td>21.55</td>
+      <td>10.83</td>
+    </tr>
+    <tr>
+      <th>MEAN</th>
+      <td>73.63</td>
+      <td>24.37</td>
+      <td>26.79</td>
+      <td>21.89</td>
+      <td>41.82</td>
+      <td>22.21</td>
+      <td>24.0</td>
+      <td>30.64</td>
+      <td>33.92</td>
+      <td>22.28</td>
+      <td>28.54</td>
+      <td>17.88</td>
+      <td>16.75</td>
+      <td>62.45</td>
+      <td>20.72</td>
+      <td>21.08</td>
+      <td>14.92</td>
+      <td>16.77</td>
+      <td>30.04</td>
+      <td>14.87</td>
+    </tr>
+    <tr>
+      <th>Num Drifts</th>
+      <td>3</td>
+      <td>4</td>
+      <td>3</td>
+      <td>3</td>
+      <td>4</td>
+      <td>3</td>
+      <td>4</td>
+      <td>5</td>
+      <td>4</td>
+      <td>3</td>
+      <td>4</td>
+      <td>4</td>
+      <td>4</td>
+      <td>3</td>
+      <td>3</td>
+      <td>2</td>
+      <td>2</td>
+      <td>4</td>
+      <td>4</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>Num Outliers</th>
+      <td>6</td>
+      <td>10</td>
+      <td>11</td>
+      <td>14</td>
+      <td>8</td>
+      <td>12</td>
+      <td>7</td>
+      <td>6</td>
+      <td>14</td>
+      <td>11</td>
+      <td>9</td>
+      <td>12</td>
+      <td>10</td>
+      <td>6</td>
+      <td>10</td>
+      <td>5</td>
+      <td>15</td>
+      <td>10</td>
+      <td>12</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <th>Num Registros</th>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+      <td>522</td>
+    </tr>
+    <tr>
+      <th>STD</th>
+      <td>72.09</td>
+      <td>28.23</td>
+      <td>32.2</td>
+      <td>35.89</td>
+      <td>45.65</td>
+      <td>28.55</td>
+      <td>26.87</td>
+      <td>33.84</td>
+      <td>39.37</td>
+      <td>30.33</td>
+      <td>32.4</td>
+      <td>21.36</td>
+      <td>20.87</td>
+      <td>60.49</td>
+      <td>25.43</td>
+      <td>25.12</td>
+      <td>21.41</td>
+      <td>21.05</td>
+      <td>37.84</td>
+      <td>20.55</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<pre><code class="language-python">&quot;&quot;&quot;#evaluate_model(model_hft_reg)
+fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, 1]
+        label=df_data_orig_drifted.columns[1]
+        evaluate_model_without_outliers (model_hft_reg.clone(),df_data,label,ax,&quot;hft&quot;)
+        i += 1
+        break
+    break
+plt.tight_layout()
+plt.show()&quot;&quot;&quot;
+</code></pre>
+<pre><code>'#evaluate_model(model_hft_reg)\nfig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))\ni = 0\nfor row in axes:\n    for ax in row:\n        df_data= df_data_orig_drifted.iloc[:, 1]\n        label=df_data_orig_drifted.columns[1]\n        evaluate_model_without_outliers (model_hft_reg.clone(),df_data,label,ax,&quot;hft&quot;)\n        i += 1\n        break\n    break\nplt.tight_layout()\nplt.show()'
+</code></pre>
+<h2 id="predicciones-a-largo-plazo">2.2 Predicciones a Largo Plazo</h2>
+<p>En este apartado vamos a realizar las tareas relacionadas con las Previsiones a largo Plazo. Aquí vamos a establecer dos horizontes temporales. Un horizonte temporal de 1 año y otro horizonte temporal de dos años.</p>
+<h2 id="estimacion-de-la-incertidumbre-mediante-regresion-por-cuantiles">2.3 Estimacion de la Incertidumbre, mediante regresión por cuantiles.</h2>
+<p>En este apartado vamos a estudiar una estimación de la incertidumbre, ya que muchas veces una predicción exacta puede no ser real por lo que se producirá un intervalo de prediccción para cada predicción.
+Estos modelos son más robustos frente a outliers y son una forma de predecir relaciones entre variables que no tienen relación entre si o simplemtente tienen una relación débil.<a href="https://medium.com/the-artificial-impostor/quantile-regression-part-1-e25bdd8d9d43">Quantile Regression</a>.
+Para ello vamos a tomar el mejor modelo de regresión de todos los que hemos análizado, el Modelo de Regresión Lineal y vamos a obtener estas &quot;regiones de confianza&quot;. Además vamos a testear el comportamiento tanto con outliers como tratando los outliers.
+Lo mismo vamos a hacer con el drift.</p>
+<pre><code class="language-python">def make_model(alpha):
+    &quot;&quot;&quot;Returns the model itself, using pipelines from riverML
+    @alpha: quantile to be observed
+    &quot;&quot;&quot;
+
+    extract_features = compose.TransformerUnion(get_ordinal_date, get_month_distances)
+
+    scale = preprocessing.StandardScaler()
+
+    learn = linear_model.LinearRegression(
+        intercept_lr=0.,
+        optimizer=optim.SGD(0.07),
+        loss=optim.losses.Quantile(alpha=alpha)
+    )
+    
+    model = extract_features | scale | learn
+    model = preprocessing.TargetStandardScaler(regressor=model)
+
+    return model
+# Dataframe to store the values of the range for prediction interval
+df_uncertainity=pd.DataFrame(columns=data_orig.columns)
+
+def evaluate_uncertainity(df_data,ax, column,check_outliers):
+  &quot;&quot;&quot;
+  Function for training the trhee models relative to the 3 quantiles
+  lower, center and upper
+  @df_data: data
+  @ax: axis to plot the predictions
+  @column: value to store the values in the dataframe df_uncertainity
+  @check_outliers: [True|False] if outliers has to be checked or not
+  &quot;&quot;&quot;
+  metric = metrics.MAE()
+
+  models = {
+      'lower': make_model(alpha=0.05),
+      'center': make_model(alpha=0.5),
+      'upper': make_model(alpha=0.95)
+  }
+
+  dates = []
+  y_trues = []
+  y_preds = {
+      'lower': [],
+      'center': [],
+      'upper': []
+  }
+  media=df_data.mean()
+  stdev=df_data.std()
+  outlier_value= media + (3*stdev)
+  for x, y in df_data.T.items():
+    if  check_outliers:
+        if y &lt;= outlier_value:
+          y_trues.append(y)
+          dates.append(x)
+
+          for name, model in models.items():
+              y_preds[name].append(model.predict_one(x))
+              model.learn_one(x, y)
+
+          # Update the error metric
+          metric.update(y, y_preds['center'][-1])
+    else:
+          y_trues.append(y)
+          dates.append(x)
+
+          for name, model in models.items():
+              y_preds[name].append(model.predict_one(x))
+              model.learn_one(x, y)
+
+          # Update the error metric
+          metric.update(y, y_preds['center'][-1])
+
+  # Plot the results
+  if check_outliers:
+    df_uncertainity.at['1 Max Upper limit handling outliers', column] = round(max(y_preds['upper']),2)
+    df_uncertainity.at['1 Mean Upper limit handling outliers', column] = round(sum(y_preds['upper'])/len(y_preds['upper']),2)
+    df_uncertainity.at['1 Mean Center limit handling outliers', column] = round(sum(y_preds['center'])/len(y_preds['center']),2)
+    df_uncertainity.at['1 Mean Lower limit handling outliers', column] = round(sum(y_preds['lower'])/len(y_preds['lower']),2)
+    df_uncertainity.at['1 Min Lower limit handling outliers', column] = round(min(y_preds['lower']),2)
+    df_uncertainity.at['1 MAE Handling outliers', column] = round(metric.get(),2)
+   
+  else:
+    df_uncertainity.at['2 Max Upper limit without handling outliers', column] = round(max(y_preds['upper']),2)
+    df_uncertainity.at['2 Mean Upper limit without handling outliers', column] = round(sum(y_preds['upper'])/len(y_preds['upper']),2)
+    df_uncertainity.at['2 Mean Center limit without handling outliers', column] = round(sum(y_preds['center'])/len(y_preds['center']),2)
+    df_uncertainity.at['2 Mean Lower limit without handling outliers', column] = round(sum(y_preds['lower'])/len(y_preds['lower']),2)
+    df_uncertainity.at['2 Min Lower limit without handling outliers', column] = round(min(y_preds['lower']),2)
+    df_uncertainity.at['2 MAE Without Handling outliers', column] = round(metric.get(),2)
+
+  ax.grid(alpha=0.75)
+  ax.plot(dates, y_trues, lw=3, color='#2ecc71', alpha=0.8, label='Truth')
+  ax.plot(dates, y_preds['center'], lw=3, color='#e74c3c', alpha=0.8, label='Prediction')
+  ax.fill_between(dates, y_preds['lower'], y_preds['upper'], color='blue', alpha=0.3, label='Prediction interval')
+  ax.legend()
+  ax.set_title(metric)
+
+
+</code></pre>
+<pre><code class="language-python">def evaluate_uncertainity_drift(df_data,ax, column,check_drift):
+  &quot;&quot;&quot;
+  Function for training the trhee models relative to the 3 quantiles
+  lower, center and upper
+  @df_data: data
+  @ax: axis to plot the predictions
+  @column: value to store the values in the dataframe df_uncertainity
+  @check_drift: [True|False] if drift has to be checked or not
+  &quot;&quot;&quot;
+ 
+  drifts=[]
+  metric = metrics.MAE()
+
+  models = {
+      'lower': make_model(alpha=0.05),
+      'center': make_model(alpha=0.5),
+      'upper': make_model(alpha=0.95)
+  }
+
+  dates = []
+  y_trues = []
+  y_preds = {
+      'lower': [],
+      'center': [],
+      'upper': []
+  }
+  media=df_data.mean()
+  stdev=df_data.std()
+  outlier_value= media + (3*stdev)
+
+  #contador de Drifts
+  num_drifts = 0 
+  drifts=[]
+
+  if check_drift:
+    #Inicializamos el detector de Drift
+    drift_detector = drift.ADWIN()
+    for x, y in df_data.T.items():
+      drift_detector.update(y)
+
+      #if y &lt;= outlier_value:
+      y_trues.append(y)
+      dates.append(x)
+      if drift_detector.drift_detected:
+        drifts.append(x)
+      for name, model in models.items():
+          if not drift_detector.drift_detected:
+            y_preds[name].append(model.predict_one(x))
+            model.learn_one(x, y)
+            
+          else: #if drift detected
+            #print(&quot;drift_detected&quot;)
+            if name=='lower':
+              #print(&quot;restarting lower&quot;)
+              model = make_model(alpha=0.05)
+            elif name=='center':
+              #print(&quot;restarting center&quot;)
+              model=make_model(alpha=0.5)
+            elif name==&quot;upper&quot;:
+              #print(&quot;restarting uper&quot;)
+              model=make_model(alpha=0.95)
+            y_preds[name].append(model.predict_one(x))
+            #model.learn_one(x, y)
+      # Update the error metric
+      metric.update(y, y_preds['center'][-1])
+
+    drift_detector=drift.ADWIN() #reiniciamos el drift detector
+  else:
+      
+      for x, y in df_data.T.items():
+        
+        #if y &lt;= outlier_value:
+            y_trues.append(y)
+            dates.append(x)
+            for name, model in models.items():
+                y_preds[name].append(model.predict_one(x))
+                model.learn_one(x, y)
+
+            # Update the error metric
+            metric.update(y, y_preds['center'][-1])
+      
+
+
+  # Plot the results
+  if check_drift:
+    df_uncertainity.at['3 Max Upper limit handling drift', column] = round(max(y_preds['upper']),2)
+    df_uncertainity.at['3 Mean Upper limit handling drift', column] = round(sum(y_preds['upper'])/len(y_preds['upper']),2)
+    df_uncertainity.at['3 Mean Center limit handling drift', column] = round(sum(y_preds['center'])/len(y_preds['center']),2)
+    df_uncertainity.at['3 Mean Lower limit handling drift', column] = round(sum(y_preds['lower'])/len(y_preds['lower']),2)
+    df_uncertainity.at['3 MAE  Handling drift', column] = round(metric.get(),2)
+    df_uncertainity.at['3 Min Lower limit handling drift', column] = round(min(y_preds['lower']),2)
+  else:
+    df_uncertainity.at['4 Max Upper limit without handling drift', column] = round(max(y_preds['upper']),2)
+    df_uncertainity.at['4 Mean Upper limit without handling drift', column] = round(sum(y_preds['upper'])/len(y_preds['upper']),2)
+    df_uncertainity.at['4 Mean Center limit without handling drift', column] = round(sum(y_preds['center'])/len(y_preds['center']),2)
+    df_uncertainity.at['4 Mean Lower limit without handling drift', column] = round(sum(y_preds['lower'])/len(y_preds['lower']),2)
+    df_uncertainity.at['4 MAE Without handling drift', column] = round(metric.get(),2)
+    df_uncertainity.at['4 Min Lower limit without handling drift', column] = round(min(y_preds['lower']),2)
+
+  if drifts is not None:
+      for drift_detected in drifts:
+              ax.axvline(drift_detected, color='red')
+  ax.grid(alpha=0.75)
+  ax.plot(dates, y_trues, lw=3, color='#2ecc71', alpha=0.8, label='Truth')
+  ax.plot(dates, y_preds['center'], lw=3, color='#e74c3c', alpha=0.8, label='Prediction')
+  ax.fill_between(dates, y_preds['lower'], y_preds['upper'], color='blue', alpha=0.3, label='Prediction interval')
+  ax.set_xlabel(column)
+  ax.legend()
+  ax.set_title(metric)
+</code></pre>
+<h3 id="testing-the-model-without-handling-outliers">2.3.1 Testing the model without handling outliers</h3>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_uncertainity(df_data,ax,label,check_outliers=False)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo, sin tratar los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_113_0.png" alt="png" /></p>
+<h3 id="testing-the-model-handling-outliers">2.3.2 Testing the model handling outliers</h3>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= data_orig.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_uncertainity(df_data,ax,label,check_outliers=True)
+        i += 1
+fig.suptitle(&quot;Comportamiento del modelo, tratando los Outliers&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_115_0.png" alt="png" /></p>
+<h3 id="testing-the-model-without-handling-concept-drift">2.3.1 Testing the model without handling concept drift</h3>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_uncertainity_drift(df_data,ax,label,check_drift=False)
+        i += 1
+        
+    
+fig.suptitle(&quot;Comportamiento del modelo, sin el drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_117_0.png" alt="png" /></p>
+<h3 id="testing-the-model-handling-concept-drift">2.3.3 Testing the model handling concept drift</h3>
+<pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
+i = 0
+for row in axes:
+    for ax in row:
+        df_data= df_data_orig_drifted.iloc[:, i]
+        label=data_orig.columns[i]
+        evaluate_uncertainity_drift(df_data,ax,label,check_drift=True)
+        i += 1
+        
+    
+fig.suptitle(&quot;Comportamiento del modelo, Tratando el drift&quot;, fontsize=20)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_119_0.png" alt="png" /></p>
+<pre><code class="language-python">df_uncertainity.drop(columns=['Total_Casos']).sort_index(ascending=True)
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>BUDAPEST</th>
+      <th>BARANYA</th>
+      <th>BACS</th>
+      <th>BEKES</th>
+      <th>BORSOD</th>
+      <th>CSONGRAD</th>
+      <th>FEJER</th>
+      <th>GYOR</th>
+      <th>HAJDU</th>
+      <th>HEVES</th>
+      <th>JASZ</th>
+      <th>KOMAROM</th>
+      <th>NOGRAD</th>
+      <th>PEST</th>
+      <th>SOMOGY</th>
+      <th>SZABOLCS</th>
+      <th>TOLNA</th>
+      <th>VAS</th>
+      <th>VESZPREM</th>
+      <th>ZALA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1 MAE Handling outliers</th>
+      <td>41.46</td>
+      <td>18.52</td>
+      <td>20.42</td>
+      <td>19.46</td>
+      <td>32.14</td>
+      <td>20.03</td>
+      <td>19.56</td>
+      <td>20.24</td>
+      <td>26.15</td>
+      <td>17.94</td>
+      <td>21.92</td>
+      <td>13.82</td>
+      <td>13.27</td>
+      <td>36.0</td>
+      <td>15.86</td>
+      <td>19.4</td>
+      <td>14.73</td>
+      <td>15.16</td>
+      <td>21.97</td>
+      <td>12.74</td>
+    </tr>
+    <tr>
+      <th>1 Max Upper limit handling outliers</th>
+      <td>350.35</td>
+      <td>160.75</td>
+      <td>272.57</td>
+      <td>200.94</td>
+      <td>351.88</td>
+      <td>169.4</td>
+      <td>199.61</td>
+      <td>302.51</td>
+      <td>329.84</td>
+      <td>196.71</td>
+      <td>275.36</td>
+      <td>205.87</td>
+      <td>116.36</td>
+      <td>322.3</td>
+      <td>171.68</td>
+      <td>178.48</td>
+      <td>129.03</td>
+      <td>140.93</td>
+      <td>238.46</td>
+      <td>140.19</td>
+    </tr>
+    <tr>
+      <th>1 Mean Center limit handling outliers</th>
+      <td>92.53</td>
+      <td>32.68</td>
+      <td>34.61</td>
+      <td>26.07</td>
+      <td>53.65</td>
+      <td>28.2</td>
+      <td>30.87</td>
+      <td>39.94</td>
+      <td>44.95</td>
+      <td>25.38</td>
+      <td>38.61</td>
+      <td>23.7</td>
+      <td>20.48</td>
+      <td>84.26</td>
+      <td>24.77</td>
+      <td>27.86</td>
+      <td>18.45</td>
+      <td>19.86</td>
+      <td>37.42</td>
+      <td>17.23</td>
+    </tr>
+    <tr>
+      <th>1 Mean Lower limit handling outliers</th>
+      <td>26.16</td>
+      <td>2.95</td>
+      <td>1.6</td>
+      <td>-7.15</td>
+      <td>4.62</td>
+      <td>-3.04</td>
+      <td>1.3</td>
+      <td>9.6</td>
+      <td>4.2</td>
+      <td>-1.11</td>
+      <td>2.15</td>
+      <td>3.41</td>
+      <td>0.89</td>
+      <td>24.79</td>
+      <td>2.66</td>
+      <td>-1.77</td>
+      <td>-1.55</td>
+      <td>-2.46</td>
+      <td>1.28</td>
+      <td>-1.89</td>
+    </tr>
+    <tr>
+      <th>1 Mean Upper limit handling outliers</th>
+      <td>183.62</td>
+      <td>70.91</td>
+      <td>77.72</td>
+      <td>67.16</td>
+      <td>115.31</td>
+      <td>70.85</td>
+      <td>75.85</td>
+      <td>83.5</td>
+      <td>95.15</td>
+      <td>69.78</td>
+      <td>86.29</td>
+      <td>59.56</td>
+      <td>50.81</td>
+      <td>158.71</td>
+      <td>61.01</td>
+      <td>71.03</td>
+      <td>51.17</td>
+      <td>57.16</td>
+      <td>88.53</td>
+      <td>51.08</td>
+    </tr>
+    <tr>
+      <th>1 Min Lower limit handling outliers</th>
+      <td>-222.06</td>
+      <td>-176.28</td>
+      <td>-200.16</td>
+      <td>-163.51</td>
+      <td>-218.12</td>
+      <td>-97.45</td>
+      <td>-184.61</td>
+      <td>-212.75</td>
+      <td>-251.01</td>
+      <td>-125.2</td>
+      <td>-125.54</td>
+      <td>-67.42</td>
+      <td>-69.57</td>
+      <td>-233.61</td>
+      <td>-102.44</td>
+      <td>-110.57</td>
+      <td>-53.37</td>
+      <td>-80.91</td>
+      <td>-206.31</td>
+      <td>-100.88</td>
+    </tr>
+    <tr>
+      <th>2 MAE Without Handling outliers</th>
+      <td>45.35</td>
+      <td>19.72</td>
+      <td>22.72</td>
+      <td>25.91</td>
+      <td>35.63</td>
+      <td>22.79</td>
+      <td>20.79</td>
+      <td>21.39</td>
+      <td>29.43</td>
+      <td>20.93</td>
+      <td>23.9</td>
+      <td>15.66</td>
+      <td>14.6</td>
+      <td>37.9</td>
+      <td>18.06</td>
+      <td>23.43</td>
+      <td>15.88</td>
+      <td>17.32</td>
+      <td>24.38</td>
+      <td>13.99</td>
+    </tr>
+    <tr>
+      <th>2 Max Upper limit without handling outliers</th>
+      <td>426.0</td>
+      <td>162.56</td>
+      <td>272.57</td>
+      <td>516.79</td>
+      <td>356.2</td>
+      <td>212.52</td>
+      <td>228.33</td>
+      <td>319.71</td>
+      <td>401.23</td>
+      <td>235.54</td>
+      <td>295.81</td>
+      <td>223.38</td>
+      <td>151.11</td>
+      <td>359.96</td>
+      <td>215.4</td>
+      <td>395.65</td>
+      <td>147.52</td>
+      <td>209.16</td>
+      <td>319.49</td>
+      <td>140.19</td>
+    </tr>
+    <tr>
+      <th>2 Mean Center limit without handling outliers</th>
+      <td>91.98</td>
+      <td>35.32</td>
+      <td>35.43</td>
+      <td>27.99</td>
+      <td>55.5</td>
+      <td>29.73</td>
+      <td>33.66</td>
+      <td>40.8</td>
+      <td>46.13</td>
+      <td>28.82</td>
+      <td>40.12</td>
+      <td>24.83</td>
+      <td>21.04</td>
+      <td>83.83</td>
+      <td>27.23</td>
+      <td>27.31</td>
+      <td>19.26</td>
+      <td>21.93</td>
+      <td>41.43</td>
+      <td>18.14</td>
+    </tr>
+    <tr>
+      <th>2 Mean Lower limit without handling outliers</th>
+      <td>26.53</td>
+      <td>1.74</td>
+      <td>-0.6</td>
+      <td>-12.87</td>
+      <td>6.13</td>
+      <td>-5.51</td>
+      <td>0.95</td>
+      <td>6.24</td>
+      <td>1.91</td>
+      <td>-2.97</td>
+      <td>2.39</td>
+      <td>0.62</td>
+      <td>-1.29</td>
+      <td>24.02</td>
+      <td>0.7</td>
+      <td>-5.84</td>
+      <td>-1.42</td>
+      <td>-4.52</td>
+      <td>-0.2</td>
+      <td>-2.29</td>
+    </tr>
+    <tr>
+      <th>2 Mean Upper limit without handling outliers</th>
+      <td>200.08</td>
+      <td>77.65</td>
+      <td>84.02</td>
+      <td>86.44</td>
+      <td>128.96</td>
+      <td>83.5</td>
+      <td>78.79</td>
+      <td>89.2</td>
+      <td>106.91</td>
+      <td>84.32</td>
+      <td>90.38</td>
+      <td>58.19</td>
+      <td>59.6</td>
+      <td>172.35</td>
+      <td>69.67</td>
+      <td>82.76</td>
+      <td>56.3</td>
+      <td>64.92</td>
+      <td>98.49</td>
+      <td>51.62</td>
+    </tr>
+    <tr>
+      <th>2 Min Lower limit without handling outliers</th>
+      <td>-222.06</td>
+      <td>-176.28</td>
+      <td>-215.66</td>
+      <td>-342.44</td>
+      <td>-266.09</td>
+      <td>-97.45</td>
+      <td>-178.47</td>
+      <td>-242.27</td>
+      <td>-308.43</td>
+      <td>-125.2</td>
+      <td>-188.13</td>
+      <td>-109.06</td>
+      <td>-69.57</td>
+      <td>-233.61</td>
+      <td>-135.63</td>
+      <td>-186.78</td>
+      <td>-53.37</td>
+      <td>-97.79</td>
+      <td>-206.31</td>
+      <td>-100.88</td>
+    </tr>
+    <tr>
+      <th>3 MAE  Handling drift</th>
+      <td>37.97</td>
+      <td>16.51</td>
+      <td>18.9</td>
+      <td>23.07</td>
+      <td>30.98</td>
+      <td>17.69</td>
+      <td>16.92</td>
+      <td>19.73</td>
+      <td>25.34</td>
+      <td>19.2</td>
+      <td>19.59</td>
+      <td>13.0</td>
+      <td>12.63</td>
+      <td>31.01</td>
+      <td>15.52</td>
+      <td>18.19</td>
+      <td>13.11</td>
+      <td>13.53</td>
+      <td>21.37</td>
+      <td>11.4</td>
+    </tr>
+    <tr>
+      <th>3 Max Upper limit handling drift</th>
+      <td>426.0</td>
+      <td>161.18</td>
+      <td>272.57</td>
+      <td>516.79</td>
+      <td>356.2</td>
+      <td>205.94</td>
+      <td>228.33</td>
+      <td>319.71</td>
+      <td>401.23</td>
+      <td>237.29</td>
+      <td>295.81</td>
+      <td>223.38</td>
+      <td>149.19</td>
+      <td>321.49</td>
+      <td>215.4</td>
+      <td>395.65</td>
+      <td>147.52</td>
+      <td>209.16</td>
+      <td>319.49</td>
+      <td>140.19</td>
+    </tr>
+    <tr>
+      <th>3 Mean Center limit handling drift</th>
+      <td>67.85</td>
+      <td>23.86</td>
+      <td>24.4</td>
+      <td>21.7</td>
+      <td>38.91</td>
+      <td>20.69</td>
+      <td>22.63</td>
+      <td>29.61</td>
+      <td>33.29</td>
+      <td>21.13</td>
+      <td>28.13</td>
+      <td>17.94</td>
+      <td>15.95</td>
+      <td>60.47</td>
+      <td>19.6</td>
+      <td>19.21</td>
+      <td>14.82</td>
+      <td>16.38</td>
+      <td>29.06</td>
+      <td>13.75</td>
+    </tr>
+    <tr>
+      <th>3 Mean Lower limit handling drift</th>
+      <td>9.24</td>
+      <td>-2.0</td>
+      <td>-3.01</td>
+      <td>-15.81</td>
+      <td>-3.06</td>
+      <td>-6.93</td>
+      <td>-1.62</td>
+      <td>-1.93</td>
+      <td>-3.93</td>
+      <td>-7.26</td>
+      <td>-0.61</td>
+      <td>-2.69</td>
+      <td>-3.47</td>
+      <td>7.74</td>
+      <td>-2.98</td>
+      <td>-6.11</td>
+      <td>-3.46</td>
+      <td>-4.08</td>
+      <td>-7.51</td>
+      <td>-2.55</td>
+    </tr>
+    <tr>
+      <th>3 Mean Upper limit handling drift</th>
+      <td>170.91</td>
+      <td>62.93</td>
+      <td>62.82</td>
+      <td>75.06</td>
+      <td>104.79</td>
+      <td>63.22</td>
+      <td>58.94</td>
+      <td>71.31</td>
+      <td>83.31</td>
+      <td>76.9</td>
+      <td>64.11</td>
+      <td>48.03</td>
+      <td>53.86</td>
+      <td>139.0</td>
+      <td>57.1</td>
+      <td>59.16</td>
+      <td>48.64</td>
+      <td>45.99</td>
+      <td>81.88</td>
+      <td>40.22</td>
+    </tr>
+    <tr>
+      <th>3 Min Lower limit handling drift</th>
+      <td>-222.06</td>
+      <td>-176.28</td>
+      <td>-215.66</td>
+      <td>-342.44</td>
+      <td>-266.09</td>
+      <td>-97.45</td>
+      <td>-178.47</td>
+      <td>-242.27</td>
+      <td>-308.43</td>
+      <td>-125.2</td>
+      <td>-188.13</td>
+      <td>-109.06</td>
+      <td>-69.57</td>
+      <td>-233.61</td>
+      <td>-135.63</td>
+      <td>-186.78</td>
+      <td>-53.37</td>
+      <td>-97.79</td>
+      <td>-206.31</td>
+      <td>-100.88</td>
+    </tr>
+    <tr>
+      <th>4 MAE Without handling drift</th>
+      <td>38.76</td>
+      <td>16.62</td>
+      <td>18.88</td>
+      <td>23.21</td>
+      <td>30.62</td>
+      <td>17.72</td>
+      <td>16.62</td>
+      <td>19.78</td>
+      <td>25.19</td>
+      <td>19.36</td>
+      <td>19.56</td>
+      <td>13.09</td>
+      <td>12.76</td>
+      <td>31.63</td>
+      <td>15.94</td>
+      <td>18.25</td>
+      <td>13.31</td>
+      <td>13.81</td>
+      <td>21.57</td>
+      <td>11.35</td>
+    </tr>
+    <tr>
+      <th>4 Max Upper limit without handling drift</th>
+      <td>426.0</td>
+      <td>160.75</td>
+      <td>272.57</td>
+      <td>516.79</td>
+      <td>356.2</td>
+      <td>205.94</td>
+      <td>228.33</td>
+      <td>319.71</td>
+      <td>401.23</td>
+      <td>235.54</td>
+      <td>295.81</td>
+      <td>223.38</td>
+      <td>149.58</td>
+      <td>321.49</td>
+      <td>215.4</td>
+      <td>395.65</td>
+      <td>147.52</td>
+      <td>209.16</td>
+      <td>319.49</td>
+      <td>140.19</td>
+    </tr>
+    <tr>
+      <th>4 Mean Center limit without handling drift</th>
+      <td>67.62</td>
+      <td>24.77</td>
+      <td>24.73</td>
+      <td>21.45</td>
+      <td>39.62</td>
+      <td>20.68</td>
+      <td>23.09</td>
+      <td>30.06</td>
+      <td>33.25</td>
+      <td>22.02</td>
+      <td>27.38</td>
+      <td>18.17</td>
+      <td>16.36</td>
+      <td>60.16</td>
+      <td>19.88</td>
+      <td>19.25</td>
+      <td>15.29</td>
+      <td>16.42</td>
+      <td>30.16</td>
+      <td>13.64</td>
+    </tr>
+    <tr>
+      <th>4 Mean Lower limit without handling drift</th>
+      <td>9.19</td>
+      <td>-1.69</td>
+      <td>-3.11</td>
+      <td>-16.71</td>
+      <td>-0.4</td>
+      <td>-6.57</td>
+      <td>-1.17</td>
+      <td>-1.89</td>
+      <td>-3.91</td>
+      <td>-6.56</td>
+      <td>-0.18</td>
+      <td>-2.38</td>
+      <td>-3.11</td>
+      <td>7.63</td>
+      <td>-2.71</td>
+      <td>-6.05</td>
+      <td>-3.35</td>
+      <td>-4.31</td>
+      <td>-7.04</td>
+      <td>-2.52</td>
+    </tr>
+    <tr>
+      <th>4 Mean Upper limit without handling drift</th>
+      <td>174.03</td>
+      <td>63.29</td>
+      <td>62.78</td>
+      <td>76.6</td>
+      <td>103.99</td>
+      <td>63.19</td>
+      <td>59.34</td>
+      <td>70.51</td>
+      <td>83.12</td>
+      <td>76.89</td>
+      <td>64.76</td>
+      <td>46.68</td>
+      <td>54.08</td>
+      <td>138.83</td>
+      <td>57.99</td>
+      <td>59.03</td>
+      <td>48.67</td>
+      <td>46.49</td>
+      <td>82.28</td>
+      <td>40.2</td>
+    </tr>
+    <tr>
+      <th>4 Min Lower limit without handling drift</th>
+      <td>-222.06</td>
+      <td>-176.28</td>
+      <td>-215.66</td>
+      <td>-342.44</td>
+      <td>-266.09</td>
+      <td>-97.45</td>
+      <td>-178.47</td>
+      <td>-242.27</td>
+      <td>-308.43</td>
+      <td>-125.2</td>
+      <td>-188.13</td>
+      <td>-109.06</td>
+      <td>-69.57</td>
+      <td>-233.61</td>
+      <td>-135.63</td>
+      <td>-186.78</td>
+      <td>-53.37</td>
+      <td>-97.79</td>
+      <td>-206.31</td>
+      <td>-100.88</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<h3 id="resultados-estimacion-de-incertidumbre">2.3.4 Resultados Estimación de Incertidumbre</h3>
+<p>Para este apartado se ha escogido el modelo que mejor métricas a obtenido durante todos los apartados anteriores. Se ha escogido el Linear Regression aunque se ha modificado un poquito introduciendo el parametro <em>intercept_lr=0</em>, para que no coja ningun valor por defecto. Este valor está por defecto a 0.01.</p>
+<ul>
+<li><p>Outliers: Se ha visto claramente en la tabla de resultados que para el tratamiento de outliers, la zona de confianza parametrizada con los siguientes parámetros   models = {
+'lower': make_model(alpha=0.05),
+'center': make_model(alpha=0.5),
+'upper': make_model(alpha=0.95)
+} se ha reducido el el rango entre el límite superior y el límite inferior, además de que el modelo produce mejor métrica MAE. Con lo cual el tratamiento de outliers ,sí mejora tanto la precisión del Modelo como la zona de confianza para predicciones individuales.</p>
+</li>
+<li><p>Concept Drift: Pare el Concept Drift no es tan clara la mejoría, aunque esta sí existe aunque menos notoria que con el tratamiento de outliers por que a primera vista los rangos de la zona de confianza, Max limite superior y Min límite inferior, son iguales, sí se puede apreciar que el modelo obtiene una métrica MAE mejorada y las medias de tanto los limites inferior y superior también mejoran, aunque no tanto como en el tratamiento de outliers.</p>
+</li>
+</ul>
+<p>Estos resultados, son así por que el Intervalo de Prediccion (zona de confianza)predice la distribución de valores futuros <strong>individualmente</strong>.
+Mientras que el Intervalo de Confianza,relativo a las métricas en este caso, MAE estima la media de la población apoyandose en valores anteriores. Por eso la métrica mejora al manejar el concept drift, hace que el modelo produzca mejor métrica, no así tanto en la zona de confianza. Sin embargo al tratar los outliers ya se están eliminando los valores extremos, reduciendo así la zona de confianza y los valores de la métrica MAE.</p>
+<h2 id="explicacion-del-modelo">2.4 Explicacion del modelo</h2>
+<pre><code class="language-python">#Instalamos la libreria SHAP y reinstalamos la libreria Numpy, con la correcta versión,
+# si no todo el notebook va a fallar
+
+!pip install shap
+#!pip install --force-reinstall numpy==1.23.4
+
+</code></pre>
+<pre><code>Requirement already satisfied: shap in c:\users\jrmr\anaconda3\lib\site-packages (0.41.0)
+Requirement already satisfied: slicer==0.0.7 in c:\users\jrmr\anaconda3\lib\site-packages (from shap) (0.0.7)
+Requirement already satisfied: cloudpickle in c:\users\jrmr\anaconda3\lib\site-packages (from shap) (2.0.0)
+Requirement already satisfied: pandas in c:\users\jrmr\anaconda3\lib\site-packages (from shap) (1.4.4)
+Requirement already satisfied: packaging&gt;20.9 in c:\users\jrmr\anaconda3\lib\site-packages (from shap) (21.3)
+Requirement already satisfied: numba in c:\users\jrmr\anaconda3\lib\site-packages (from shap) (0.55.1)
+Requirement already satisfied: tqdm&gt;4.25.0 in c:\users\jrmr\anaconda3\lib\site-packages (from shap) (4.64.1)
+Requirement already satisfied: scikit-learn in c:\users\jrmr\anaconda3\lib\site-packages (from shap) (1.0.2)
+Requirement already satisfied: scipy in c:\users\jrmr\anaconda3\lib\site-packages (from shap) (1.9.1)
+Requirement already satisfied: numpy in c:\users\jrmr\anaconda3\lib\site-packages (from shap) (1.21.0)
+Requirement already satisfied: pyparsing!=3.0.5,&gt;=2.0.2 in c:\users\jrmr\anaconda3\lib\site-packages (from packaging&gt;20.9-&gt;shap) (3.0.9)
+Requirement already satisfied: colorama in c:\users\jrmr\anaconda3\lib\site-packages (from tqdm&gt;4.25.0-&gt;shap) (0.4.5)
+Requirement already satisfied: setuptools in c:\users\jrmr\anaconda3\lib\site-packages (from numba-&gt;shap) (63.4.1)
+Requirement already satisfied: llvmlite&lt;0.39,&gt;=0.38.0rc1 in c:\users\jrmr\anaconda3\lib\site-packages (from numba-&gt;shap) (0.38.0)
+Requirement already satisfied: pytz&gt;=2020.1 in c:\users\jrmr\anaconda3\lib\site-packages (from pandas-&gt;shap) (2022.1)
+Requirement already satisfied: python-dateutil&gt;=2.8.1 in c:\users\jrmr\anaconda3\lib\site-packages (from pandas-&gt;shap) (2.8.2)
+Requirement already satisfied: threadpoolctl&gt;=2.0.0 in c:\users\jrmr\anaconda3\lib\site-packages (from scikit-learn-&gt;shap) (2.2.0)
+Requirement already satisfied: joblib&gt;=0.11 in c:\users\jrmr\anaconda3\lib\site-packages (from scikit-learn-&gt;shap) (1.1.0)
+Requirement already satisfied: six&gt;=1.5 in c:\users\jrmr\anaconda3\lib\site-packages (from python-dateutil&gt;=2.8.1-&gt;pandas-&gt;shap) (1.16.0)
+</code></pre>
+<pre><code class="language-python">#creamos dos variables artificiales  para qiue tenga sentido la explicación del modelo
+!pip install --force-reinstall numpy==1.21
+import sklearn
+from sklearn.linear_model import LinearRegression
+from matplotlib import pyplot as plt
+import numpy as np
+import shap
+import pandas as pd
+data_orig_explic = pd.read_csv('C:/Users/jrmr/Master/TFM/PEC3/hungary_chickenpox/hungary_chickenpox.csv')
+data_orig_explic['Date'] = pd.to_datetime(data_orig_explic['Date'],format=&quot;%d/%m/%Y&quot;) # convertimos a fecha
+data_orig_explic[&quot;ordinal_date&quot;]=data_orig_explic[&quot;Date&quot;].apply(lambda x: x.toordinal())
+data_orig_explic[&quot;day&quot;]=data_orig_explic[&quot;Date&quot;].apply(lambda x: x.day)
+data_orig_explic[&quot;month&quot;]=data_orig_explic[&quot;Date&quot;].apply(lambda x: x.month)
+data_orig_explic[&quot;year&quot;]=data_orig_explic[&quot;Date&quot;].apply(lambda x: x.year)
+data_orig_explic['lag_1'] = data_orig_explic['BUDAPEST'].shift(1) #suponemos que el valor anterior afecta mucho
+
+data_orig_explic['lag_1']=data_orig_explic['lag_1'].fillna(0)
+datos_a_explicar=data_orig_explic[['BUDAPEST','ordinal_date','day','month','year',&quot;lag_1&quot;]]
+datos_a_explicar.head(5)
+</code></pre>
+<pre><code>ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+daal4py 2021.6.0 requires daal==2021.4.0, which is not installed.
+river 0.14.0 requires numpy&gt;=1.23.4, but you have numpy 1.21.0 which is incompatible.
+
+
+Collecting numpy==1.21
+  Using cached numpy-1.21.0-cp39-cp39-win_amd64.whl (14.0 MB)
+Installing collected packages: numpy
+  Attempting uninstall: numpy
+    Found existing installation: numpy 1.21.0
+    Uninstalling numpy-1.21.0:
+      Successfully uninstalled numpy-1.21.0
+Successfully installed numpy-1.21.0
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>BUDAPEST</th>
+      <th>ordinal_date</th>
+      <th>day</th>
+      <th>month</th>
+      <th>year</th>
+      <th>lag_1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>168</td>
+      <td>731949</td>
+      <td>3</td>
+      <td>1</td>
+      <td>2005</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>157</td>
+      <td>731956</td>
+      <td>10</td>
+      <td>1</td>
+      <td>2005</td>
+      <td>168.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>96</td>
+      <td>731963</td>
+      <td>17</td>
+      <td>1</td>
+      <td>2005</td>
+      <td>157.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>163</td>
+      <td>731970</td>
+      <td>24</td>
+      <td>1</td>
+      <td>2005</td>
+      <td>96.0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>122</td>
+      <td>731977</td>
+      <td>31</td>
+      <td>1</td>
+      <td>2005</td>
+      <td>163.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<pre><code class="language-python">import sklearn
+from sklearn.linear_model import LinearRegression
+from matplotlib import pyplot as plt
+import numpy as np
+import shap
+
+X=data_orig_explic[['ordinal_date','day','month','year',&quot;lag_1&quot;]]
+y=data_orig_explic[['BUDAPEST']]
+model = sklearn.linear_model.LinearRegression( )
+model.fit(X, y)
+explainer = shap.LinearExplainer(model, X, feature_dependence=&quot;correlation_dependent&quot;)
+shap_values = explainer.shap_values(X)
+shap.summary_plot(shap_values, X, plot_type=&quot;bar&quot;)
+
+</code></pre>
+<pre><code>The option feature_dependence has been renamed to feature_perturbation!
+The feature_perturbation option is now deprecated in favor of using the appropriate masker (maskers.Independent, or maskers.Impute)
+
+
+
+Estimating transforms:   0%|          | 0/1000 [00:00&lt;?, ?it/s]
+</code></pre>
+<p><img src="output_126_2.png" alt="png" /></p>
+<pre><code class="language-python">shap.summary_plot(shap_values, X, feature_names=X.columns)
+</code></pre>
+<p><img src="output_127_0.png" alt="png" /></p>
+<h3 id="resultado-de-la-explicacion-del-modelo">2.4.1 Resultado de la explicación del modelo.</h3>
+
+    </body>
+</html>
+            
