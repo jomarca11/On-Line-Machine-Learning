@@ -42,3 +42,5 @@ Measurements have been made first without handling the outliers, afterward handl
 >Comparing the measurements between counties, the counties that present the lowest MAE regardless of the model used, although of course there are differences between models and the lowest MAE is still with those models treating  outliers and drift, they are those that present less dispersion, less standard deviation and lower mean, in the data. These cities are those that have a lower population or have a lower number of cases of chickenpox. The greater the spread in the data, the greater the error.
 
 ### For Long Term Forecasting:
+![image](https://user-images.githubusercontent.com/66425146/209078736-920cc116-4c2b-450c-a709-5c7a0d38f28a.png)
+
