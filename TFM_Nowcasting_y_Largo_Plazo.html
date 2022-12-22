@@ -4,14 +4,13 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="author" content="MarkdownViewer++" />
-        <title>TFM_Nowcasting_y_Largo_Plazo.md</title>
+        <title>TFM_Nowcasting_y_Largo_Plazo (1).md</title>
         <style type="text/css">
             
 /* Avoid page breaks inside the most common attributes, especially for exports (i.e. PDF) */
 td, h1, h2, h3, h4, h5, p, ul, ol, li {
     page-break-inside: avoid; 
 }
-            
 
         </style>
       </head>
@@ -26,12 +25,10 @@ Installing collected packages: numpy
     Found existing installation: numpy 1.23.4
     Uninstalling numpy-1.23.4:
       Successfully uninstalled numpy-1.23.4
-Successfully installed numpy-1.23.4
 
 
-ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
-daal4py 2021.6.0 requires daal==2021.4.0, which is not installed.
-numba 0.55.1 requires numpy&lt;1.22,&gt;=1.18, but you have numpy 1.23.4 which is incompatible.
+ERROR: Could not install packages due to an OSError: [WinError 5] Acceso denegado: 'C:\\Users\\jrmr\\Anaconda3\\Lib\\site-packages\\~1mpy\\.libs\\libopenblas.FB5AE2TYXYH2IJRDKGDGQ3XBKLKTF43H.gfortran-win_amd64.dll'
+Consider using the `--user` option or check the permissions.
 </code></pre>
 <pre><code class="language-python">import pandas as pd
 import matplotlib.pyplot as plt
@@ -79,7 +76,7 @@ Se Puede comprobar que <strong>no existen ningún valor vacio</strong> en los da
 data_orig['Total_Casos'] = data_orig.sum(axis=1)
 data_orig.head()
 </code></pre>
-<pre><code>C:\Users\jrmr\AppData\Local\Temp\ipykernel_16908\3302194850.py:2: FutureWarning: Dropping of nuisance columns in DataFrame reductions (with 'numeric_only=None') is deprecated; in a future version this will raise TypeError.  Select only valid columns before calling the reduction.
+<pre><code>C:\Users\jrmr\AppData\Local\Temp\ipykernel_9508\3302194850.py:2: FutureWarning: Dropping of nuisance columns in DataFrame reductions (with 'numeric_only=None') is deprecated; in a future version this will raise TypeError.  Select only valid columns before calling the reduction.
   data_orig['Total_Casos'] = data_orig.sum(axis=1)
 </code></pre>
 <div>
@@ -1741,17 +1738,17 @@ df_datos.drop(columns=['Total_Casos']).sort_index(ascending=True)
 </div>
 <h3 id="conclusiones">2.1.7 Conclusiones:</h3>
 <ul>
-<li>Para cada ciudad:</li>
+<li>Para cada Provincia:</li>
 </ul>
 <blockquote>
 <p>Viendo la tabla con los distintos errores, tomados de todas las mediciones anteriores, se puede ver que el modelo que mejor predice, menos MAE presenta, es el modelo de regresión lineal, al que hemos llamado <strong>Linear Regressor Model</strong>, aunque el <strong>Hoefding Tree Regressor Model</strong>, tiene unas prestaciones muy parecidas ya que en sus hojas tiene un modelo de regresion lineal igual al del <strong>Linear Regressor Model</strong>. Las métricas se han sacado comparando los modelos contra el modelo base <strong>Statistic Regressor</strong>, que simplemente lo que devuelve es el valor en el instante anterior.
 Las mediciones se han hecho primeramente sin tratar los outliers, luego se han tratado los outliers, simplemente no aprendiendo de ellos cuando se detectaban, dando una métricas mejores.Luego además de tratar los outliers se introdujo un drift artificial en los datos para ver como se comportaban los algoritmos y la respuesta fué, que se comportan mejor si los modelos se adaptan al drift que si no lo hacen. Se adaptan antes y con mayor suavidad al drift. Para detectar los posibles Concept Drift se ha usado un detector de drift ADWIN.Cada vez que se detecta un drift, el modelo es reiniciado para que aprenda de los datos mas recientes y no tenga en cuenta los mas antiguos.</p>
 </blockquote>
 <ul>
-<li>Comparando ciudades:</li>
+<li>Comparando Provincia:</li>
 </ul>
 <blockquote>
-<p>Comparando las mediciones entre ciudades, las ciudades que menor MAE presentan independientemente del modelo usado, aunque por supuesto hay diferencias entre modelos y siguen siendo los menores MAE aquellos que tratan los outliers y el drift, son aquellos que presentan una menor dispersión, menor desviación tipica y menor media, en los datos. Estas ciudades son aquellas que presentan una menor población o han contraido un menor número de casos de varicela. A mayor dispersión en los datos, mayor es el error.</p>
+<p>Comparando las mediciones entre provincias, las provincias que menor MAE presentan independientemente del modelo usado, aunque por supuesto hay diferencias entre modelos y siguen siendo los menores MAE aquellos que tratan los outliers y el drift, son aquellos que presentan una menor dispersión, menor desviación tipica y menor media, en los datos. Estas provincias son aquellas que presentan una menor población o han contraido un menor número de casos de varicela. A mayor dispersión en los datos, mayor es el error.</p>
 </blockquote>
 <h2 id="predicciones-a-largo-plazo">2.2 Predicciones a Largo Plazo</h2>
 <p>En este apartado vamos a realizar las tareas relacionadas con las Previsiones a largo Plazo. Aquí vamos a establecer tres horizontes temporales. Un horizonte temporal de 1 mes, 2 meses  y otro horizonte temporal de 3 meses.</p>
@@ -2087,7 +2084,7 @@ def evaluate_forecasting(modelo,data,ax,column,horizonte,outlier_value=0, model 
     ax.set_xlabel(column)
     ax.set_ylabel(label_num_casos)
     
-    df_datos_largo_plazo.at[mensaje+ ' '+str(horizonte)+' modelo ='+model, column] = metric
+    df_datos_largo_plazo.at[mensaje+ ' '+str(horizonte)+'semanas, modelo ='+model, column] = metric
  
     if outlier_value==0:
       std=round(data.std(),2)
@@ -2749,9 +2746,9 @@ def evaluate_forecasting_with_drift(modelo,data,ax,column,horizonte,outlier_valu
     ax.set_ylabel(label_num_casos)
     df_datos_largo_plazo.at['STD', column] = std
     df_datos_largo_plazo.at['MEAN', column] = mean
-    df_datos_largo_plazo.at[mensaje+ ' '+str(horizonte)+' modelo ='+model+' semanas', column] = metric
+    df_datos_largo_plazo.at[mensaje+ ' '+str(horizonte)+' semanas, modelo ='+model, column] = metric
     if check_drift:
-      df_datos_largo_plazo.at[mensaje_drifts+ ' '+str(horizonte)+' modelo ='+model+' semanas', column] = len(lista_drifts)
+      df_datos_largo_plazo.at[mensaje_drifts+ ' '+str(horizonte)+' semanas, modelo ='+model, column] = len(lista_drifts)
 
   
 
@@ -3331,7 +3328,7 @@ plt.show()
   </thead>
   <tbody>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  12 modelo =baseline</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  12semanas, modelo =baseline</th>
       <td>74.22</td>
       <td>36.48</td>
       <td>35.51</td>
@@ -3354,7 +3351,7 @@ plt.show()
       <td>46.47</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  12 modelo =snarimax</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  12semanas, modelo =snarimax</th>
       <td>62.91</td>
       <td>25.99</td>
       <td>31.11</td>
@@ -3377,7 +3374,7 @@ plt.show()
       <td>17.08</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  4 modelo =baseline</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  4semanas, modelo =baseline</th>
       <td>45.55</td>
       <td>23.68</td>
       <td>23.12</td>
@@ -3400,7 +3397,7 @@ plt.show()
       <td>29.18</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  4 modelo =snarimax</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  4semanas, modelo =snarimax</th>
       <td>41.88</td>
       <td>18.1</td>
       <td>22.03</td>
@@ -3423,7 +3420,7 @@ plt.show()
       <td>13.05</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  8 modelo =baseline</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  8semanas, modelo =baseline</th>
       <td>60.24</td>
       <td>30.0</td>
       <td>29.18</td>
@@ -3446,7 +3443,7 @@ plt.show()
       <td>38.75</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  8 modelo =snarimax</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  8semanas, modelo =snarimax</th>
       <td>51.75</td>
       <td>21.8</td>
       <td>26.77</td>
@@ -3469,7 +3466,7 @@ plt.show()
       <td>15.25</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  12 modelo =baseline</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  12semanas, modelo =baseline</th>
       <td>70.98</td>
       <td>35.31</td>
       <td>33.92</td>
@@ -3492,7 +3489,7 @@ plt.show()
       <td>46.74</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  12 modelo =snarimax</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  12semanas, modelo =snarimax</th>
       <td>61.61</td>
       <td>25.32</td>
       <td>30.17</td>
@@ -3515,7 +3512,7 @@ plt.show()
       <td>16.79</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  4 modelo =baseline</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  4semanas, modelo =baseline</th>
       <td>44.03</td>
       <td>23.13</td>
       <td>22.17</td>
@@ -3538,7 +3535,7 @@ plt.show()
       <td>29.19</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  4 modelo =snarimax</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  4semanas, modelo =snarimax</th>
       <td>40.9</td>
       <td>17.6</td>
       <td>21.34</td>
@@ -3561,7 +3558,7 @@ plt.show()
       <td>12.84</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  8 modelo =baseline</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  8semanas, modelo =baseline</th>
       <td>57.86</td>
       <td>29.12</td>
       <td>27.88</td>
@@ -3584,7 +3581,7 @@ plt.show()
       <td>38.9</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  8 modelo =snarimax</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  8semanas, modelo =snarimax</th>
       <td>50.74</td>
       <td>21.2</td>
       <td>25.93</td>
@@ -3607,7 +3604,7 @@ plt.show()
       <td>15.02</td>
     </tr>
     <tr>
-      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  12 modelo =baseine semanas</th>
+      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  12 semanas, modelo =baseine</th>
       <td>53.85</td>
       <td>27.32</td>
       <td>23.67</td>
@@ -3630,7 +3627,7 @@ plt.show()
       <td>42.21</td>
     </tr>
     <tr>
-      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  12 modelo =snarimax semanas</th>
+      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  12 semanas, modelo =snarimax</th>
       <td>46.27</td>
       <td>18.1</td>
       <td>21.13</td>
@@ -3653,7 +3650,7 @@ plt.show()
       <td>13.42</td>
     </tr>
     <tr>
-      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  4 modelo =baseline semanas</th>
+      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  4 semanas, modelo =baseline</th>
       <td>32.12</td>
       <td>17.62</td>
       <td>15.34</td>
@@ -3676,7 +3673,7 @@ plt.show()
       <td>25.61</td>
     </tr>
     <tr>
-      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  4 modelo =snarimax semanas</th>
+      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  4 semanas, modelo =snarimax</th>
       <td>29.51</td>
       <td>12.32</td>
       <td>14.87</td>
@@ -3699,7 +3696,7 @@ plt.show()
       <td>9.61</td>
     </tr>
     <tr>
-      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  8 modelo =baseline semanas</th>
+      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  8 semanas, modelo =baseline</th>
       <td>43.36</td>
       <td>22.62</td>
       <td>19.29</td>
@@ -3722,7 +3719,7 @@ plt.show()
       <td>35.08</td>
     </tr>
     <tr>
-      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  8 modelo =snarimax semanas</th>
+      <th>3 MAE Datos con drift en datos y tratando el drift con horizonte=  8 semanas, modelo =snarimax</th>
       <td>37.38</td>
       <td>15.08</td>
       <td>18.03</td>
@@ -3745,7 +3742,7 @@ plt.show()
       <td>11.72</td>
     </tr>
     <tr>
-      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  12 modelo =baseline semanas</th>
+      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  12 semanas, modelo =baseline</th>
       <td>57.54</td>
       <td>28.62</td>
       <td>25.62</td>
@@ -3768,7 +3765,7 @@ plt.show()
       <td>43.99</td>
     </tr>
     <tr>
-      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  12 modelo =snarimax semanas</th>
+      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  12 semanas, modelo =snarimax</th>
       <td>49.8</td>
       <td>19.38</td>
       <td>22.99</td>
@@ -3791,7 +3788,7 @@ plt.show()
       <td>14.01</td>
     </tr>
     <tr>
-      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  4 modelo =baseline semanas</th>
+      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  4 semanas, modelo =baseline</th>
       <td>35.21</td>
       <td>18.92</td>
       <td>16.98</td>
@@ -3814,7 +3811,7 @@ plt.show()
       <td>27.02</td>
     </tr>
     <tr>
-      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  4 modelo =snarimax semanas</th>
+      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  4 semanas, modelo =snarimax</th>
       <td>32.62</td>
       <td>13.54</td>
       <td>16.57</td>
@@ -3837,7 +3834,7 @@ plt.show()
       <td>10.63</td>
     </tr>
     <tr>
-      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  8 modelo =baseline semanas</th>
+      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  8 semanas, modelo =baseline</th>
       <td>46.94</td>
       <td>23.78</td>
       <td>21.08</td>
@@ -3860,7 +3857,7 @@ plt.show()
       <td>36.47</td>
     </tr>
     <tr>
-      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  8 modelo =snarimax semanas</th>
+      <th>4 MAE Datos con drift en datos y sin tratar el drift con horizonte=  8 semanas, modelo =snarimax</th>
       <td>40.74</td>
       <td>16.24</td>
       <td>19.97</td>
@@ -3883,7 +3880,7 @@ plt.show()
       <td>12.53</td>
     </tr>
     <tr>
-      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  12 modelo =baseine semanas</th>
+      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  12 semanas, modelo =baseine</th>
       <td>3</td>
       <td>3</td>
       <td>3</td>
@@ -3906,7 +3903,7 @@ plt.show()
       <td>3</td>
     </tr>
     <tr>
-      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  12 modelo =snarimax semanas</th>
+      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  12 semanas, modelo =snarimax</th>
       <td>3</td>
       <td>3</td>
       <td>3</td>
@@ -3929,7 +3926,7 @@ plt.show()
       <td>3</td>
     </tr>
     <tr>
-      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  4 modelo =baseline semanas</th>
+      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  4 semanas, modelo =baseline</th>
       <td>3</td>
       <td>3</td>
       <td>3</td>
@@ -3952,7 +3949,7 @@ plt.show()
       <td>3</td>
     </tr>
     <tr>
-      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  4 modelo =snarimax semanas</th>
+      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  4 semanas, modelo =snarimax</th>
       <td>3</td>
       <td>3</td>
       <td>3</td>
@@ -3975,7 +3972,7 @@ plt.show()
       <td>3</td>
     </tr>
     <tr>
-      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  8 modelo =baseline semanas</th>
+      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  8 semanas, modelo =baseline</th>
       <td>3</td>
       <td>3</td>
       <td>3</td>
@@ -3998,7 +3995,7 @@ plt.show()
       <td>3</td>
     </tr>
     <tr>
-      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  8 modelo =snarimax semanas</th>
+      <th>5 Num Drifts Datos con drift en datos y tratando el drift con horizonte=  8 semanas, modelo =snarimax</th>
       <td>3</td>
       <td>3</td>
       <td>3</td>
