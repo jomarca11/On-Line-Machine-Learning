@@ -59,5 +59,13 @@ For this section, the model with the best metrics obtained during all the previo
 
 These results are so because the Prediction Interval (trust region) predicts the distribution of future values **individually**. While the Confidence Interval, relative to the metrics in this case, MAE, estimates the population mean based on previous values. This is why the metric improves when handling the concept drift, it makes the model produce better metrics, but not so much in the trust region. However, when dealing with outliers, extreme values are eliminated, thus reducing the confidence zone and the values of the MAE metric.
 
+### Model Explainability:
+In  this case 5 artificial features have been introduced to check the explainability of the Linear Regressor Model.
+![image](https://user-images.githubusercontent.com/66425146/209220927-a755a1dd-1fb7-4e54-80cd-79e30075dc36.png)<br>
+
+We have drawn two summary plots with SHAP Library
+![image](https://user-images.githubusercontent.com/66425146/209221102-2dab39bc-74c3-4dcf-9cfd-ab83f077d0a9.png)
+As we can see in the first plot features are ordered in term os influence in the model, Firstly lag_1, then month and so on. In the second plot Feature importance: Variables are ranked in descending order, as in the first plot. The horizontal location shows whether the effect of that value is associated with a higher or lower prediction And color shows whether that variable is high (in red) or low (in blue) for that observation.
+
 
 
