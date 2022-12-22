@@ -50,4 +50,14 @@ Measurements have been made first without handling the outliers, afterward handl
 * Comparing counties:
 >Comparing the measurements between counties, the countie swith the lowest MAE regardless of the model used, although of course there are differences between models,  are still those that handles outliers and drift. Aagain the best model is SNARIMAX. As with Nowcating, the best provinces are those that present a lower dispersion, lower standard deviation and lower mean, in the data. These provinces are those that have a smaller population or have contracted a smaller number of cases of chickenpox. The greater the spread in the data, the greater the error.
 
+### Uncertainity Estimation:
+![image](https://user-images.githubusercontent.com/66425146/209218190-dcaa5818-09a0-461a-b411-4f64a2fd341b.png)
+For this section, the model with the best metrics obtained during all the previous sections has been chosen. Linear Regression has been chosen, although it has been modified a little by introducing the parameter intercept_lr=0, so that it does not take any default value. This default value is set to 0.01.
+
+* Outliers: It has been clearly seen in the results table that handling outliers, the *trust region*,range between upper bound and lower bound, parameterized with the following parameters models = { 'lower': make_model(alpha=0.05), 'center': make_model(alpha= 0.5), 'upper': make_model(alpha=0.95) } has been reduced, moreover the model produces better MAE metrics. S ohandling outliers does improve both the accuracy of the Model and the confidence zone.trust region, for individual predictions.<br>
+* Concept Drift: For Concept Drift, the improvement is not so clear, although it does exist, although it is less noticeable than handling outliers because at first glance the ranges of the confidence zone, Max upper limit and Min lower limit, are the same, however an improved MAE metric and the mean measurements  of both the lower and upper bounds also improve, although not as much as in the treatment of outliers.
+
+These results are so because the Prediction Interval (trust region) predicts the distribution of future values **individually**. While the Confidence Interval, relative to the metrics in this case, MAE, estimates the population mean based on previous values. This is why the metric improves when handling the concept drift, it makes the model produce better metrics, but not so much in the trust region. However, when dealing with outliers, extreme values are eliminated, thus reducing the confidence zone and the values of the MAE metric.
+
+
 
