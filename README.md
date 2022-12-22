@@ -44,4 +44,10 @@ Measurements have been made first without handling the outliers, afterward handl
 ### For Long Term Forecasting:
 ![image](https://user-images.githubusercontent.com/66425146/209214675-39efb656-694b-49d5-9633-cb893ad63ef6.png)
 
+* For each county:
+ >In this case we have two models with several horizons. The **SNARIMAX** model that has been configured with its parameters from the Autocorrelation (ACF) and Partial Autocorrelation (PACF) plots, and **another model taken as Baseline, the Holtwinter**, in which its parameters have also been adjusted for good performance. The first thing to note is that the longer the horizon the models predict worse. Obviously, as in the case of Nowcasting, if the outliers are treated, better performance is obtained than if it is not done. The same is valid for drift. An artificial drift has been introduced to make these checks with the ADWIN drift detector. Every time a drift is detected, both the model and the detector are reset.
+
+* Comparing counties:
+>Comparing the measurements between counties, the countie swith the lowest MAE regardless of the model used, although of course there are differences between models,  are still those that handles outliers and drift. Aagain the best model is SNARIMAX. As with Nowcating, the best provinces are those that present a lower dispersion, lower standard deviation and lower mean, in the data. These provinces are those that have a smaller population or have contracted a smaller number of cases of chickenpox. The greater the spread in the data, the greater the error.
+
 
