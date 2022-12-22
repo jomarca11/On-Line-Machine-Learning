@@ -65,6 +65,7 @@ In  this case 5 artificial features have been introduced to check the explainabi
 
 We have drawn two summary plots with SHAP Library
 ![image](https://user-images.githubusercontent.com/66425146/209221102-2dab39bc-74c3-4dcf-9cfd-ab83f077d0a9.png)
+
 As we can see in the first plot features are ordered in term os influence in the model, Firstly lag_1, then month and so on. In the second plot Feature importance: Variables are ranked in descending order, as in the first plot. The horizontal location shows whether the effect of that value is associated with a higher or lower prediction And color shows whether that variable is high (in red) or low (in blue) for that observation.
 
 
