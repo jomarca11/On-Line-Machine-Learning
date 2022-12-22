@@ -14,7 +14,7 @@ Both notebooks are joint in this notebook TFM_Nowcasting_y_Largo_Plazo.ipynb, yo
 ## Language:
 Comments in code and Thesis for the master in Spanish<br>
 
-## Dataset
+## Dataset:
 Downloaded from arXivLabs [Chicken Cases Estimation in Hungary](https://doi.org/10.48550/arXiv.2209.14129).<br>
 Time-Series Forecasting is a powerful data modeling discipline that analyzes historical observations to predict future values of a time-series. It has been utilized in numerous applications, including but not limited to economics, meteorology, and health. In this paper, we use time-series forecasting techniques to model and predict the future incidence of chickenpox.
  
@@ -28,5 +28,11 @@ In this study **Nowcasting** with several models like Linear Regression Model,Ho
 And for **Forecasting**, SNARIMAX model with three horizons (1,2 and 3 months) against a dummy model Holtwinter, has been studied.
 
 Once all the investigations have been done. A bit of light explaining the best model, Linear Regression,have been carried out with SHAP Library, although there is also another library called LIME for the same purpose.
-**Estimation of uncertainity and the explanation** of the model are in TFM_Nowcasting and in the global notebook TFM_Nowcasting_y_Largo_Plazo.ipynb 
-** Results
+**Estimation of uncertainity and the explanation** of the model are in TFM_Nowcasting and in the global notebook TFM_Nowcasting_y_Largo_Plazo.ipynb <br>
+
+## Results:
+Looking at the table containing the measurements of MAE metric gathered across the whole process
+![image](https://user-images.githubusercontent.com/66425146/209072982-c3f90426-8824-45b6-9e71-c3efe25c25e7.png)
+We can say that 
+* For each county:
+>It can be seen that the model that best predicts, presents the least MAE, is the linear regression model, which we have called the **Linear Regressor Model**, although the Hoefding Tree Regressor Model , has very similar behaviour since in its leaves  has a linear regression model equal to that of the Linear Regressor Model. The figures of the table have been obtained by comparing the models against the **Statistic Regressor base model**, which simply returns the value at the previous instant (t-1).
