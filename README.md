@@ -4,7 +4,7 @@ This repository is intended for On Line Machine Learning
 * Python 3.9
 * [RiverML Library version 0.14](https://riverml.xyz/0.14.0/)
 * Numpy Version 1.24.3 for PAC and PACF plotting. (Autocorrelation and Parcial Autocorrelation Plots)
-* [SHAP library for Model Explanation] (https://shap-lrjball.readthedocs.io/en/latest/index.html)
+* [SHAP library for Model Explanation](https://shap-lrjball.readthedocs.io/en/latest/index.html)
 ## Project Structure (Source Code): 
 The project is divided into two notebooks:
 > TFM_Largo_Plazo <br>
