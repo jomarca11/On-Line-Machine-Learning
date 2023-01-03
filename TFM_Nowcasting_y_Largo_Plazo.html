@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="author" content="MarkdownViewer++" />
-        <title>TFM_Nowcasting_y_Largo_Plazo (1).md</title>
+        <title>TFM_Nowcasting_y_Largo_Plazo.md</title>
         <style type="text/css">
             
 /* Avoid page breaks inside the most common attributes, especially for exports (i.e. PDF) */
@@ -27,7 +27,7 @@ Installing collected packages: numpy
       Successfully uninstalled numpy-1.23.4
 
 
-ERROR: Could not install packages due to an OSError: [WinError 5] Acceso denegado: 'C:\\Users\\jrmr\\Anaconda3\\Lib\\site-packages\\~1mpy\\.libs\\libopenblas.FB5AE2TYXYH2IJRDKGDGQ3XBKLKTF43H.gfortran-win_amd64.dll'
+ERROR: Could not install packages due to an OSError: [WinError 5] Acceso denegado: 'C:\\Users\\jrmr\\Anaconda3\\Lib\\site-packages\\~9mpy\\.libs\\libopenblas.FB5AE2TYXYH2IJRDKGDGQ3XBKLKTF43H.gfortran-win_amd64.dll'
 Consider using the `--user` option or check the permissions.
 </code></pre>
 <pre><code class="language-python">import pandas as pd
@@ -76,7 +76,7 @@ Se Puede comprobar que <strong>no existen ningún valor vacio</strong> en los da
 data_orig['Total_Casos'] = data_orig.sum(axis=1)
 data_orig.head()
 </code></pre>
-<pre><code>C:\Users\jrmr\AppData\Local\Temp\ipykernel_9508\3302194850.py:2: FutureWarning: Dropping of nuisance columns in DataFrame reductions (with 'numeric_only=None') is deprecated; in a future version this will raise TypeError.  Select only valid columns before calling the reduction.
+<pre><code>C:\Users\jrmr\AppData\Local\Temp\ipykernel_8024\3302194850.py:2: FutureWarning: Dropping of nuisance columns in DataFrame reductions (with 'numeric_only=None') is deprecated; in a future version this will raise TypeError.  Select only valid columns before calling the reduction.
   data_orig['Total_Casos'] = data_orig.sum(axis=1)
 </code></pre>
 <div>
@@ -826,7 +826,7 @@ for row in axes:
         ax.set_ylabel(&quot;MAE&quot;)
         ax.legend([&quot;Baseline&quot;, &quot;SGTRegressor&quot;,&quot;LinearRegressor&quot;,&quot;HFTreeRegressor&quot;]);
         i += 1
-fig.suptitle(&quot;Comparación de la métrica de error seleccionada (MAE)con baseline, sin tratat los outliers, para cada ciudad&quot;, fontsize=20)
+fig.suptitle(&quot;Comparación de la métrica de error seleccionada (MAE)con baseline, sin tratar los outliers, para cada provincia&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -846,7 +846,7 @@ for row in axes:
         ax.set_ylabel(&quot;MAE&quot;)
         ax.legend([&quot;Baseline&quot;, &quot;SGTRegressor&quot;,&quot;LinearRegressor&quot;,&quot;HFTreeRegressor&quot;]);
         i += 1
-fig.suptitle(&quot;Comparación de la métrica de error seleccionada (MAE)con baseline, tratando los outliers, para cada ciudad&quot;, fontsize=20)
+fig.suptitle(&quot;Comparación de la métrica de error seleccionada (MAE)con baseline, tratando los outliers, para cada provincia&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -919,7 +919,7 @@ for row in axes:
         ax.set_xlabel(label_num_casos)
         ax.set_ylabel(&quot;MAE&quot;)
         i += 1
-fig.suptitle(&quot;Stochastic Gradient Tree Regressor comparación de evolución del error&quot;, fontsize=20)
+fig.suptitle(&quot;Statistic Regressor comparación de evolución del error&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -1038,7 +1038,7 @@ for row in axes:
         label=df_data_orig_drifted.columns[i]
         evaluate_model_without_outliers(model_stg_reg.clone(),df_data,label,ax,&quot;stg&quot;)
         i += 1
-fig.suptitle(&quot;tochastic Gradient Tree Regressor, adaptánsose al Concept Drift&quot;, fontsize=20)
+fig.suptitle(&quot;Stochastic Gradient Tree Regressor, adaptánsose al Concept Drift&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -1053,7 +1053,7 @@ for row in axes:
         label=df_data_orig_drifted.columns[i]
         evaluate_model(model_stg_reg.clone(),df_data,label,ax,etiqueta=&quot;stg&quot;,check_drift=True,is_data_drifted=True)
         i += 1
-fig.suptitle(&quot;tochastic Gradient Tree Regressor sin adaptación al Concept Drift&quot;, fontsize=20)
+fig.suptitle(&quot;Stochastic Gradient Tree Regressor sin adaptación al Concept Drift&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -1090,7 +1090,7 @@ plt.tight_layout()
 plt.show()
 </code></pre>
 <p><img src="output_88_0.png" alt="png" /></p>
-<h3 id="graficas-comparacion-de-la-metrica-de-error-seleccionada-maesegun-los-diferentes-modelos-para-cada-ciudatd-teniendo-en-cuenta-los-outliers-y-detectando-y-adaptandose-al-concept-drift">2.1.4  Graficas, comparación de la métrica de error seleccionada (MAE)según los diferentes modelos para cada ciudatd, teniendo en cuenta los outliers y detectando y adaptandose al Concept Drift.</h3>
+<h3 id="graficas-comparacion-de-la-metrica-de-error-seleccionada-maesegun-los-diferentes-modelos-para-cada-provincia-teniendo-en-cuenta-los-outliers-y-detectando-y-adaptandose-al-concept-drift">2.1.4  Graficas, comparación de la métrica de error seleccionada (MAE)según los diferentes modelos para cada provincia, teniendo en cuenta los outliers y detectando y adaptandose al Concept Drift.</h3>
 <p>En este apartado se comprueba como los modelos que incorporan un detector de Drift, ante una situación de Concept Drift en los datos, estos se adaptan mejor. Se adaptan antes y con mas suavidad que los modelos sin incorporar detector de drift</p>
 <h5 id="graficas-de-la-evolucion-del-error-por-regresor-con-drift-en-los-datos-y-usando-deteccion-y-adaptacion-al-drift">2.1.3.4.1 Gráficas de la evolución del error por regresor, con drift en los datos y usando detección y adaptación al drift.</h5>
 <pre><code class="language-python">fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 14))
@@ -1107,7 +1107,7 @@ for row in axes:
         ax.set_xlabel(label_num_casos)
         ax.set_ylabel(&quot;MAE&quot;)
         i += 1
-fig.suptitle(&quot;Gráficas de evolución del error con drift en los datos y adaptación al drift&quot;, fontsize=20)
+fig.suptitle(&quot;Gráficas de evolución del error con drift en los datos y adaptación al drift para cada provincia&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -1127,7 +1127,7 @@ for row in axes:
         ax.set_xlabel(label_num_casos)
         ax.set_ylabel(&quot;MAE&quot;)
         i += 1
-fig.suptitle(&quot;Gráficas de evolución del error con drift en los datos pero sin adaptación al drift&quot;, fontsize=20)
+fig.suptitle(&quot;Gráficas de evolución del error con drift en los datos pero sin adaptación al drift para cada provincia&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -1146,7 +1146,7 @@ for row in axes:
         ax.set_xlabel(label_num_casos)
         ax.set_ylabel(&quot;MAE&quot;)
         i += 1
-fig.suptitle(&quot; Hoeffding Tree Regressor comparación de evolución del error&quot;, fontsize=20)
+fig.suptitle(&quot; Hoeffding Tree Regressor comparación de evolución del error para cada provincia&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -1164,7 +1164,7 @@ for row in axes:
         ax.set_xlabel(label_num_casos)
         ax.set_ylabel(&quot;MAE&quot;)
         i += 1
-fig.suptitle(&quot;Linear Regressor comparación de evolución del error&quot;, fontsize=20)
+fig.suptitle(&quot;Linear Regressor comparación de evolución del error para cada provincia&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -1182,7 +1182,7 @@ for row in axes:
         ax.set_xlabel(label_num_casos)
         ax.set_ylabel(&quot;MAE&quot;)
         i += 1
-fig.suptitle(&quot;Stochastic Gradient Tree Regressor comparación de evolución del error&quot;, fontsize=20)
+fig.suptitle(&quot;Stochastic Gradient Tree Regressor comparación de evolución del error para cada provincia&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -1200,7 +1200,7 @@ for row in axes:
         ax.set_xlabel(label_num_casos)
         ax.set_ylabel(&quot;MAE&quot;)
         i += 1
-fig.suptitle(&quot; Statistic Regressor (Dummy), comparación de evolución del error&quot;, fontsize=20)
+fig.suptitle(&quot; Statistic Regressor (Dummy), comparación de evolución del error para cada provincia&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -2084,7 +2084,7 @@ def evaluate_forecasting(modelo,data,ax,column,horizonte,outlier_value=0, model 
     ax.set_xlabel(column)
     ax.set_ylabel(label_num_casos)
     
-    df_datos_largo_plazo.at[mensaje+ ' '+str(horizonte)+'semanas, modelo ='+model, column] = metric
+    df_datos_largo_plazo.at[mensaje+ ' '+str(horizonte)+' semanas, modelo = '+model, column] = metric
  
     if outlier_value==0:
       std=round(data.std(),2)
@@ -2425,7 +2425,7 @@ for row in axes:
         evaluate_forecasting(model_dummy,df_data,ax,label,horizonte=8,outlier_value=0,model='baseline')
   
         i += 1
-fig.suptitle(&quot;Comportamiento del modelo, HoltWinter (Base Line) a un mes sin tratar los Outliers&quot;, fontsize=20)
+fig.suptitle(&quot;Comportamiento del modelo, HoltWinter (Base Line) a dos meses sin tratar los Outliers&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -2461,7 +2461,7 @@ for row in axes:
         evaluate_forecasting(model_dummy,df_data,ax,label,horizonte=8,outlier_value=outlier_value,model='baseline')
         #evaluate_model(model_hft_reg.clone(),df_data,label,ax,etiqueta=&quot;hft&quot;,check_drift=False,check_outliers=False,is_data_drifted=False)
         i += 1
-fig.suptitle(&quot;Comportamiento del modelo, HoltWinter (Base Line) a un mes tratando los Outliers&quot;, fontsize=20)
+fig.suptitle(&quot;Comportamiento del modelo, HoltWinter (Base Line) a dos meses tratando los Outliers&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -2499,7 +2499,7 @@ for row in axes:
         evaluate_forecasting(model_dummy,df_data,ax,label,horizonte=12,outlier_value=0,model='baseline')
   
         i += 1
-fig.suptitle(&quot;Comportamiento del modelo, HoltWinter (Base Line) a un mes sin tratar los Outliers&quot;, fontsize=20)
+fig.suptitle(&quot;Comportamiento del modelo, HoltWinter (Base Line) a tres meses sin tratar los Outliers&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -2536,7 +2536,7 @@ for row in axes:
         evaluate_forecasting(model_dummy,df_data,ax,label,horizonte=12,outlier_value=outlier_value,model='baseline')
   
         i += 1
-fig.suptitle(&quot;Comportamiento del modelo, HoltWinter (Base Line) a un mes sin tratar los Outliers&quot;, fontsize=20)
+fig.suptitle(&quot;Comportamiento del modelo, HoltWinter (Base Line) a tres meses tratando los Outliers&quot;, fontsize=20)
 plt.tight_layout()
 plt.show()
 </code></pre>
@@ -3328,7 +3328,7 @@ plt.show()
   </thead>
   <tbody>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  12semanas, modelo =baseline</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  12 semanas, modelo = baseline</th>
       <td>74.22</td>
       <td>36.48</td>
       <td>35.51</td>
@@ -3351,7 +3351,7 @@ plt.show()
       <td>46.47</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  12semanas, modelo =snarimax</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  12 semanas, modelo = snarimax</th>
       <td>62.91</td>
       <td>25.99</td>
       <td>31.11</td>
@@ -3374,7 +3374,7 @@ plt.show()
       <td>17.08</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  4semanas, modelo =baseline</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  4 semanas, modelo = baseline</th>
       <td>45.55</td>
       <td>23.68</td>
       <td>23.12</td>
@@ -3397,7 +3397,7 @@ plt.show()
       <td>29.18</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  4semanas, modelo =snarimax</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  4 semanas, modelo = snarimax</th>
       <td>41.88</td>
       <td>18.1</td>
       <td>22.03</td>
@@ -3420,7 +3420,7 @@ plt.show()
       <td>13.05</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  8semanas, modelo =baseline</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  8 semanas, modelo = baseline</th>
       <td>60.24</td>
       <td>30.0</td>
       <td>29.18</td>
@@ -3443,7 +3443,7 @@ plt.show()
       <td>38.75</td>
     </tr>
     <tr>
-      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  8semanas, modelo =snarimax</th>
+      <th>1 MAE Datos sin drift y sin tratar outliers con horizonte=  8 semanas, modelo = snarimax</th>
       <td>51.75</td>
       <td>21.8</td>
       <td>26.77</td>
@@ -3466,7 +3466,7 @@ plt.show()
       <td>15.25</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  12semanas, modelo =baseline</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  12 semanas, modelo = baseline</th>
       <td>70.98</td>
       <td>35.31</td>
       <td>33.92</td>
@@ -3489,7 +3489,7 @@ plt.show()
       <td>46.74</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  12semanas, modelo =snarimax</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  12 semanas, modelo = snarimax</th>
       <td>61.61</td>
       <td>25.32</td>
       <td>30.17</td>
@@ -3512,7 +3512,7 @@ plt.show()
       <td>16.79</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  4semanas, modelo =baseline</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  4 semanas, modelo = baseline</th>
       <td>44.03</td>
       <td>23.13</td>
       <td>22.17</td>
@@ -3535,7 +3535,7 @@ plt.show()
       <td>29.19</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  4semanas, modelo =snarimax</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  4 semanas, modelo = snarimax</th>
       <td>40.9</td>
       <td>17.6</td>
       <td>21.34</td>
@@ -3558,7 +3558,7 @@ plt.show()
       <td>12.84</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  8semanas, modelo =baseline</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  8 semanas, modelo = baseline</th>
       <td>57.86</td>
       <td>29.12</td>
       <td>27.88</td>
@@ -3581,7 +3581,7 @@ plt.show()
       <td>38.9</td>
     </tr>
     <tr>
-      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  8semanas, modelo =snarimax</th>
+      <th>2 MAE Datos sin drift y tratando outliers con horizonte=  8 semanas, modelo = snarimax</th>
       <td>50.74</td>
       <td>21.2</td>
       <td>25.93</td>
@@ -4091,21 +4091,21 @@ plt.show()
 </div>
 <h3 id="conclusiones-1">2.2.9 Conclusiones</h3>
 <ul>
-<li>Para cada ciudad:</li>
+<li>Para cada provincia:</li>
 </ul>
 <blockquote>
 <p>En este caso tenemos dos modelos con varios horizontes.El modelo <strong>SNARIMAX</strong> que ha sido configurado con sus parámetros a partir de los plots de Autocorrlación (ACF) y Autocorrelación Parcial (PACF)y otro modelo tomado como Baseline que es el <strong>Holtwinter</strong>, en el que también se han ajustado sus parámetros para un buen rendimiento. Lo primero que hay que destacar que a mayor horizonte los modelos predicen peor, tienen más error. Obviamente como en el caso del Nowcasting si se tratan los outliers se obtienen mejores prestaciones que si no se hace. Lo mismo ocurre con el drift. Se ha introducido un drift artificial para hacer estas comprobaciones con el detector de drifts ADWIN. Cada vez que se detecta un drift, tanto el modelo como el detector son reiniciados.</p>
 </blockquote>
 <ul>
-<li>Comparando ciudades:</li>
+<li>Comparando Provincias:</li>
 </ul>
 <blockquote>
-<p>Comparando las mediciones entre ciudades, las ciudades que menor MAE presentan independientemente del modelo usado, aunque por supuesto hay diferencias entre modelos y siguen siendo los menores MAE aquellos que tratan los outliers y el drift. Como en la comparación en cada ciudad el modelo para cada ciudad el mejor modelo es el <strong>SNARIMAX</strong>
-Al igual que con el Nowcating, las mejores ciudades, son aquellas que presentan una menor dispersión, menor desviación tipica y menor media, en los datos.
-Estas ciudades son aquellas que presentan una menor población o han contraido un menor número de casos de varicela. A mayor dispersión en los datos, mayor es el error.</p>
+<p>Comparando las mediciones entre provincias, las provincias que menor MAE presentan independientemente del modelo usado, aunque por supuesto hay diferencias entre modelos, siguen siendo los menores MAE aquellos que tratan los outliers y el drift. Como en la comparación en cada provincia el modelo para cada provincia el mejor modelo es el <strong>SNARIMAX</strong>
+Al igual que con el Nowcating, las mejores provincias, son aquellas que presentan una menor dispersión, menor desviación tipica y menor media, en los datos.
+Estas provincias son aquellas que presentan una menor población o han contraido un menor número de casos de varicela. A mayor dispersión en los datos, mayor es el error.</p>
 </blockquote>
 <h2 id="estimacion-de-la-incertidumbre-mediante-regresion-por-cuantiles">2.3 Estimacion de la Incertidumbre, mediante regresión por cuantiles.</h2>
-<p>En este apartado vamos a estudiar una estimación de la incertidumbre, ya que muchas veces una predicción exacta puede no ser real por lo que se producirá un intervalo de prediccción para cada predicción.
+<p>En este apartado vamos a estudiar una estimación de la incertidumbre, ya que muchas veces una predicción exacta puede no ser real por lo que se producirá un intervalo de confianza para cada predicción.
 Estos modelos son más robustos frente a outliers y son una forma de predecir relaciones entre variables que no tienen relación entre si o simplemtente tienen una relación débil.<a href="https://medium.com/the-artificial-impostor/quantile-regression-part-1-e25bdd8d9d43">Quantile Regression</a>.
 Para ello vamos a tomar el mejor modelo de regresión de todos los que hemos análizado, el Modelo de Regresión Lineal y vamos a obtener estas &quot;regiones de confianza&quot;. Además vamos a testear el comportamiento tanto con outliers como tratando los outliers.
 Lo mismo vamos a hacer con el drift.</p>
@@ -4202,6 +4202,7 @@ def evaluate_uncertainity(df_data,ax, column,check_outliers):
   ax.plot(dates, y_trues, lw=3, color='#2ecc71', alpha=0.8, label='Truth')
   ax.plot(dates, y_preds['center'], lw=3, color='#e74c3c', alpha=0.8, label='Prediction')
   ax.fill_between(dates, y_preds['lower'], y_preds['upper'], color='blue', alpha=0.3, label='Prediction interval')
+  ax.set_ylabel(label_num_casos)
   ax.legend()
   ax.set_title(metric)
 
@@ -4314,6 +4315,7 @@ def evaluate_uncertainity(df_data,ax, column,check_outliers):
   ax.plot(dates, y_preds['center'], lw=3, color='#e74c3c', alpha=0.8, label='Prediction')
   ax.fill_between(dates, y_preds['lower'], y_preds['upper'], color='blue', alpha=0.3, label='Prediction interval')
   ax.set_xlabel(column)
+  ax.set_ylabel(label_num_casos)
   ax.legend()
   ax.set_title(metric)
 </code></pre>
